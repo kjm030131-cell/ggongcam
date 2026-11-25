@@ -538,6 +538,7 @@ function setMode(m){
   $('#modeAuto').setAttribute('aria-pressed', m==='auto'); $('#modeRoi').setAttribute('aria-pressed', m==='roi');
   streak = 0; streakLabel = null; loggedLabel = null; ema = {}; lastBoxes = [];
   clearBoxes(); $('#tag').classList.remove('on'); $('#bars').innerHTML=''; $('#vName').textContent='대기'; $('#vName').style.color=''; $('#vConf').textContent=''; $('#vNote').textContent='';
+  $('#vNote').textContent='';
   renderClasses(); refreshStatus();
   try{ localStorage.setItem(STORE+'-mode', m) }catch(_){}
 }
