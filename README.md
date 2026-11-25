@@ -43,7 +43,9 @@ git push               # main 에 push 하면 Cloudflare Pages 가 자동 배포
 
 ## 감지 모델 학습
 
-- 데이터: [CigWasteNet](https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection) (MIT, 캠퍼스 바닥 꽁초 2,000장). 회전 박스를 일반 박스로 바꿔 꽁초 한 클래스로 학습 (`training/prepare.py`).
+- 데이터 1: [CigWasteNet](https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection) (MIT). 대학 캠퍼스 바닥의 꽁초를 위에서 가까이 찍은 사진 2,000장(학습 1,508 / 검증 392 / 테스트 100), 사진마다 꽁초 1개. 회전 박스를 일반 박스로 바꿔 꽁초 한 클래스로 학습 (`training/prepare.py`).
+- 데이터 2: [TACO](https://github.com/pedropro/TACO) 의 Cigarette 클래스. 길거리 쓰레기를 서서 찍은 사진 중 꽁초가 있는 432장(꽁초 1,158개)과 꽁초 없는 사진 500장. 긴 변 1280으로 줄여 640 조각으로 자르고 꽁초 든 조각과 음성 조각을 더한다 (`training/prepare_taco.py`). 저장소 코드는 MIT, 사진은 장마다 Flickr CC 또는 OpenLitterMap ODbL 이라 상업적으로 쓸 때는 사진별 라이선스를 따로 확인해야 한다.
+- 학습은 이전 결과(`training/weights/butt.pt`)에서 이어서 한다.
 - 학습: GitHub Actions `train` 워크플로가 CPU로 YOLO11n을 416px로 학습하고 ONNX로 내보내 `public/models/` 에 커밋한다. 커밋되면 Pages가 자동 배포.
 - 다시 학습: Actions 탭에서 train 을 수동 실행하거나 `training/` 을 고쳐 push.
 - 성능 수치는 `public/models/butt.json` 의 test 항목과 페이지의 판정 설정 아래에 표시된다.

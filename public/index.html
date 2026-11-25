@@ -409,7 +409,7 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
       <dt><kbd>S</kbd></dt><dd>지금 화면을 재학습용으로 저장</dd>
       <dt><kbd>Z</kbd></dt><dd>집기 영역 표시</dd>
       <dt><kbd>G</kbd></dt><dd>격자 표시</dd>
-      <dt><kbd>M</kbd></dt><dd>좌우 반전 (화면만, 좌표는 원본 기준)</dd>
+      <dt><kbd>M</kbd></dt><dd>좌우 반전 (노트북 앞 카메라는 기본 켜짐, 폰 뒤 카메라는 꺼짐. 화면만 바뀌고 좌표는 원본 기준)</dd>
       <dt><kbd>1</kbd>~<kbd>9</kbd></dt><dd>누르는 동안 해당 종류 샘플 수집</dd>
       <dt><kbd>Esc</kbd></dt><dd>닫기</dd>
     </dl>
@@ -432,8 +432,11 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 
 /* ---------- settings ---------- */
 const SET_IDS = ['region','modelSize','conf','iou','stab','policy','fieldMm','zoneY','zoneW','zoneH','baud','wsUrl','rate','fmt','onlyT','autoCap','capWhen','thr','kVal','resSel'];
-function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; if(s.mirror){ $('#view').classList.add('mirror'); $('#mirrorBtn').setAttribute('aria-pressed','true'); } if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
-function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirror = $('#view').classList.contains('mirror'); s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
+let mirrorPref = {}, facing = 'user';
+function setMirror(v){ view.classList.toggle('mirror', v); $('#mirrorBtn').setAttribute('aria-pressed', String(v)); }
+function applyMirror(){ const v = mirrorPref[facing]; setMirror(v==null ? facing!=='environment' : v); }
+function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; mirrorPref = s.mirrorPref || {}; if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
+function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirrorPref = mirrorPref; s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
 const on = sel => $(sel).getAttribute('aria-pressed') === 'true';
 const num = id => +$('#'+id).value;
 const OUTS = {conf:v=>v+'%', iou:v=>v+'%', stab:v=>v, zoneY:v=>v+'%', zoneW:v=>v+'%', zoneH:v=>v+'%', thr:v=>v+'%', kVal:v=>v};
@@ -671,7 +674,9 @@ async function startCam(deviceId){
   try{
     stream = await navigator.mediaDevices.getUserMedia({audio:false, video: Object.assign({width:{ideal:w}, height:{ideal:h}}, deviceId ? {deviceId:{exact:deviceId}} : {facingMode:'environment'})});
     video.srcObject = stream; await video.play(); showMsg(''); srcKind = 'cam'; tracks = []; boxes = []; target = null;
-    await listCams(stream.getVideoTracks()[0].getSettings().deviceId);
+    const st = stream.getVideoTracks()[0].getSettings();
+    facing = st.facingMode === 'environment' || /back|rear|후면|environment/i.test(stream.getVideoTracks()[0].label) ? 'environment' : 'user'; applyMirror();
+    await listCams(st.deviceId);
     $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
     video.onloadedmetadata = () => $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
   }catch(e){
@@ -1004,7 +1009,7 @@ function loop(){
 for(const id of SET_IDS){ $('#'+id)?.addEventListener('input', ()=>{ paintOutputs(); saveSettings(); if(id==='fmt'||id==='fieldMm') paintSample(); }); }
 function paintSample(){ $('#fmtSample').textContent = '예: ' + ($('#fmt').value==='json' ? '{"t":1764050000000,"n":2,"tgt":{"cls":"butt","conf":0.87,"x":32,"y":-15,"in":false,"px":[812,540],"stable":9}}' : 'T,32,-15,0.87,0,2'); }
 const toggle = (sel, fn) => $(sel).addEventListener('click', ()=>{ const b = $(sel); b.setAttribute('aria-pressed', String(!on(sel))); fn && fn(on(sel)); saveSettings(); });
-toggle('#zoneBtn'); toggle('#gridBtn'); toggle('#mirrorBtn', v => view.classList.toggle('mirror', v));
+toggle('#zoneBtn'); toggle('#gridBtn'); toggle('#mirrorBtn', v => { view.classList.toggle('mirror', v); mirrorPref[facing] = v; });
 function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', String(paused)); $('#pauseBtn span').textContent = paused ? '재개' : '일시정지'; if(srcKind!=='photo') paused ? video.pause() : video.play().catch(()=>{}); }
 $('#pauseBtn').addEventListener('click', togglePause);
 $('#camSel').addEventListener('change', e=>startCam(e.target.value));
