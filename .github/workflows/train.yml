@@ -12,7 +12,9 @@ on:
     paths: ["training/**"]
 permissions:
   contents: write
-concurrency: train
+concurrency:
+  group: train
+  cancel-in-progress: true
 jobs:
   train:
     runs-on: ubuntu-latest

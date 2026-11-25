@@ -14,9 +14,11 @@ model.train(
     data=data, imgsz=IMGSZ, epochs=80, time=HOURS, patience=20,
     batch=32, workers=4, device="cpu", cache="ram",
     degrees=180, flipud=0.5, fliplr=0.5, scale=0.5, hsv_v=0.5,
-    project="runs", name="butt", exist_ok=True, plots=False, verbose=False,
+    project=str(Path("runs").resolve()), name="butt", exist_ok=True, plots=False, verbose=False,
 )
-best = YOLO("runs/butt/weights/best.pt")
+best_path = Path(model.trainer.best)
+print("best:", best_path)
+best = YOLO(str(best_path))
 m = best.val(data=data, split="test", imgsz=IMGSZ, device="cpu", plots=False)
 onnx = best.export(format="onnx", imgsz=IMGSZ, opset=12, simplify=True, dynamic=False)
 
