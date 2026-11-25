@@ -9,14 +9,14 @@ data, outdir = sys.argv[1], Path(sys.argv[2])
 import os
 DATASET = "CigWasteNet + TACO" + (" + Roboflow 꽁초 데이터" if os.environ.get("HAS_RF") else "") + (" + 직접 모은 사진" if any(Path("data/extra").rglob("*.zip")) or any(Path("data/extra").rglob("*.jpg")) else "")
 IMGSZ = 512
-HOURS = float(sys.argv[3]) if len(sys.argv) > 3 else 4.5
+HOURS = float(sys.argv[3]) if len(sys.argv) > 3 else 0.75
 
 # 이전 학습 결과가 있으면 거기서 이어서 학습 (처음부터보다 빨리 좋아진다)
 INIT = "training/weights/butt.pt" if Path("training/weights/butt.pt").exists() else "yolo11n.pt"
 print("시작 가중치:", INIT)
 model = YOLO(INIT)
 model.train(
-    data=data, imgsz=IMGSZ, epochs=300, time=HOURS, patience=40,
+    data=data, imgsz=IMGSZ, epochs=300, time=HOURS, patience=40, warmup_epochs=1 if INIT.endswith("butt.pt") else 3,
     batch=32, workers=4, device="cpu", cache="ram",
     degrees=180, flipud=0.5, fliplr=0.5, scale=0.7, hsv_v=0.5, hsv_s=0.6, mosaic=1.0, close_mosaic=8,
     project=str(Path("runs").resolve()), name="butt", exist_ok=True, plots=False, verbose=False,

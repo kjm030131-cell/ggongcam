@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
     inputs:
       hours:
-        description: "학습 시간 상한(시간)"
-        default: "4.5"
+        description: "학습 시간 상한(시간). 이어서 학습은 0.75면 충분, 데이터를 크게 바꿨으면 3~4.5"
+        default: "0.75"
   push:
     branches: [main]
     paths: ["training/**"]
@@ -32,7 +32,7 @@ jobs:
           if [ "${D:-0}" -gt "${M:-0}" ]; then echo "run=1" >> $GITHUB_OUTPUT; echo "새 사진 있음"; else echo "run=0" >> $GITHUB_OUTPUT; echo "새 사진 없음: 건너뜀"; fi
       - uses: actions/setup-python@v5
         if: steps.check.outputs.run == '1'
-        with: { python-version: "3.11" }
+        with: { python-version: "3.11", cache: pip }
       - name: install
         if: steps.check.outputs.run == '1'
         run: |
@@ -62,7 +62,7 @@ jobs:
         if: steps.check.outputs.run == '1'
         env:
           HAS_RF: ${{ secrets.ROBOFLOW_API_KEY != '' && '1' || '' }}
-        run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '4.5' }}"
+        run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '0.75' }}"
       - name: commit model
         if: steps.check.outputs.run == '1'
         run: |
