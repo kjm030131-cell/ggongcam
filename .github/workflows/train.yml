@@ -32,7 +32,7 @@ jobs:
           if [ "${D:-0}" -gt "${M:-0}" ]; then echo "run=1" >> $GITHUB_OUTPUT; echo "새 사진 있음"; else echo "run=0" >> $GITHUB_OUTPUT; echo "새 사진 없음: 건너뜀"; fi
       - uses: actions/setup-python@v5
         if: steps.check.outputs.run == '1'
-        with: { python-version: "3.11", cache: pip }
+        with: { python-version: "3.11" }
       - name: install
         if: steps.check.outputs.run == '1'
         run: |
