@@ -9,6 +9,12 @@
     {
       "file": "butt-384.onnx",
       "imgsz": 384
+    },
+    {
+      "file": "butt-close-416.onnx",
+      "imgsz": 416,
+      "kind": "close",
+      "note": "CigWasteNet만 학습한 이전 모델. 바닥을 가까이서 내려다볼 때 더 정확"
     }
   ],
   "names": [

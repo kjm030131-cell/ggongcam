@@ -306,7 +306,7 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
           <div class="field range"><label for="conf">신뢰도 기준</label><output id="confOut"></output><input type="range" id="conf" min="10" max="90" value="40"></div>
           <div class="field range"><label for="iou">겹친 박스 합치기 (IoU)</label><output id="iouOut"></output><input type="range" id="iou" min="20" max="80" value="45"></div>
           <div class="field range"><label for="stab">목표 확정까지 프레임</label><output id="stabOut"></output><input type="range" id="stab" min="1" max="30" value="6"></div>
-          <div class="field"><label for="modelSize">모델 크기</label><select id="modelSize"><option value="auto">자동</option><option value="fast">빠르게</option><option value="accurate">정확하게</option></select></div>
+          <div class="field"><label for="modelSize">모델 크기</label><select id="modelSize"><option value="auto">자동</option><option value="fast">빠르게</option><option value="accurate">정확하게</option><option value="close">가까이 전용 (이전 모델)</option></select></div>
           <div class="field"><label for="resSel">카메라 해상도</label><select id="resSel"><option value="640">640 × 480</option><option value="1280" selected>1280 × 720</option><option value="1920">1920 × 1080</option></select></div>
         </details>
         <p class="hint" id="modelInfo" style="margin:14px 0 0"></p>
@@ -467,7 +467,9 @@ const loadScript = src => new Promise((res, rej) => { const el = document.create
 let detEP = 'wasm', detVariant = null;
 async function gpuOK(){ try{ return !!(navigator.gpu && await navigator.gpu.requestAdapter()); }catch(_){ return false; } }
 function pickVariant(){
-  const vs = detInfo.variants && detInfo.variants.length ? detInfo.variants : [{file: detInfo.file||'butt.onnx', imgsz: detInfo.imgsz}];
+  const all = detInfo.variants && detInfo.variants.length ? detInfo.variants : [{file: detInfo.file||'butt.onnx', imgsz: detInfo.imgsz}];
+  const close = all.find(v=>v.kind==='close'), vs = all.filter(v=>v.kind!=='close');
+  if($('#modelSize').value==='close' && close) return close;
   const pref = $('#modelSize').value, big = vs.reduce((a,b)=>b.imgsz>a.imgsz?b:a), small = vs.reduce((a,b)=>b.imgsz<a.imgsz?b:a);
   if(pref==='fast') return small; if(pref==='accurate') return big;
   return detEP==='webgpu' ? big : (matchMedia('(pointer:coarse)').matches ? small : big);
@@ -506,7 +508,7 @@ async function loadDetector(){
 function paintModelInfo(){
   const t = detInfo.test||{}, p = v => Math.round((v||0)*100)+'%';
   const eng = detEP==='webgpu' ? 'GPU 가속(WebGPU)' : 'CPU ' + ort.env.wasm.numThreads + '코어';
-  $('#modelInfo').textContent = `${eng}, 입력 ${detVariant.imgsz}px. 검증 기준 정밀도 ${p(t.precision)}, 재현율 ${p(t.recall)}, mAP50 ${p(t.map50)}. 학습 데이터 ${detInfo.dataset||''}${detInfo.trained_at?', '+detInfo.trained_at:''}.`;
+  $('#modelInfo').textContent = `${eng}, 입력 ${detVariant.imgsz}px${detVariant.kind==='close'?' (가까이 전용 이전 모델)':''}. 검증셋 기준 정밀도 ${p(t.precision)}, 재현율 ${p(t.recall)}, mAP50 ${p(t.map50)}. 학습 데이터 ${detInfo.dataset||''}${detInfo.trained_at?', '+detInfo.trained_at:''}.`;
 }
 function iou(a,b){const x1=Math.max(a.x,b.x),y1=Math.max(a.y,b.y),x2=Math.min(a.x+a.w,b.x+b.w),y2=Math.min(a.y+a.h,b.y+b.h);const i=Math.max(0,x2-x1)*Math.max(0,y2-y1);return i/(a.w*a.h+b.w*b.h-i+1e-6)}
 let inBuf = null;
