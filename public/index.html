@@ -107,6 +107,18 @@ input[type=range]{width:120px;accent-color:var(--ink)}
 @media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.stage{border-right:0;border-bottom:1px solid var(--line)}}
 @media(max-width:600px){.perf{display:none}.brand span{display:none}.bar{grid-template-columns:6em minmax(0,1fr) 3em}.hold{min-width:88px}}
 @media(prefers-reduced-motion:reduce){.roi.hit{animation:none}*{transition:none!important}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{min-height:40px;padding:0 14px;border:0;background:var(--bg);cursor:pointer;font-size:15px;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.view canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#still{display:none}.view.photo #still{display:block}.view.photo video{visibility:hidden}
+.view.auto .roi{display:none}
+.det{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:15px;padding:7px 0;border-top:1px solid var(--line)}
+.det:first-child{border-top:0}
+.det i{width:14px;height:14px;border-radius:3px;background:var(--k)}
+.det em{font-style:normal;color:var(--mute)}
+.only-roi{}.app.auto .only-roi{display:none}.app:not(.auto) .only-auto{display:none}
 </style>
 </head>
 <body>
@@ -119,19 +131,27 @@ input[type=range]{width:120px;accent-color:var(--ink)}
   <div class="perf"><span id="fps">0</span> fps &nbsp; <span id="ms">0</span> ms</div>
 </header>
 
-<main class="app">
+<main class="app auto" id="app">
   <section class="stage">
-    <div class="view mirror" id="view">
+    <div class="view mirror auto" id="view">
       <video id="video" playsinline muted></video>
+      <canvas id="still"></canvas>
+      <canvas id="ov"></canvas>
       <div class="roi" id="roi"><i></i><i></i><i></i><i></i><div class="tag" id="tag"></div></div>
       <div class="msg" id="msg"><p id="msgText"></p><button class="btn solid" id="retry" type="button">카메라 다시 연결</button></div>
     </div>
 
     <div class="toolbar">
+      <div class="seg" role="group" aria-label="인식 방식">
+        <button type="button" id="modeAuto" aria-pressed="true">자동 감지</button>
+        <button type="button" id="modeRoi" aria-pressed="false">영역 판정</button>
+      </div>
       <label class="field">카메라 <select id="camSel" aria-label="카메라 선택"></select></label>
       <button class="btn" id="mirrorBtn" type="button" aria-pressed="true">좌우 반전</button>
       <button class="btn" id="pauseBtn" type="button" aria-pressed="false">일시정지 <span class="kbd">Space</span></button>
-      <label class="field">판정 영역 <input type="range" id="roiSize" min="30" max="100" value="60"> <span id="roiOut">60%</span></label>
+      <button class="btn" id="photoBtn" type="button">사진으로 테스트</button>
+      <input type="file" id="photoFile" accept="image/*" hidden>
+      <label class="field only-roi">판정 영역 <input type="range" id="roiSize" min="30" max="100" value="60"> <span id="roiOut">60%</span></label>
     </div>
 
     <div class="log">
@@ -140,7 +160,7 @@ input[type=range]{width:120px;accent-color:var(--ink)}
         <div class="tally" id="tally"></div>
         <button class="btn" id="clearLog" type="button">기록 비우기</button>
       </div>
-      <div class="strip" id="strip"><span class="empty">같은 판정이 안정적으로 이어지면 여기에 캡처가 남습니다.</span></div>
+      <div class="strip" id="strip"><span class="empty">꽁초가 안정적으로 잡히면 여기에 캡처가 남습니다.</span></div>
     </div>
   </section>
 
@@ -148,12 +168,13 @@ input[type=range]{width:120px;accent-color:var(--ink)}
     <section class="result" aria-live="polite">
       <div class="verdict"><span id="vName">대기</span><span id="vConf"></span></div>
       <div id="bars"></div>
-      <p class="note" id="vNote">두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다.</p>
+      <p class="note" id="vNote"></p>
     </section>
 
     <section>
-      <h2>학습 샘플</h2>
-      <p class="hint">버튼을 누르고 있는 동안 사각형 안 화면이 초당 약 10장씩 쌓입니다. 숫자키로도 됩니다. 각도, 거리, 조명, 바닥을 바꿔가며 클래스당 50장 이상 권장.</p>
+      <h2>종류 학습 <span class="only-auto" style="font-weight:400;color:var(--mute)">(선택)</span></h2>
+      <p class="hint only-auto">꽁초 감지는 학습 없이 바로 됩니다. 일반, 얇은, 전자담배 스틱까지 나누려면 꽁초를 비춘 채 해당 버튼을 누르고 있으세요. 감지된 박스 안이 샘플로 쌓이고, 두 종류 이상 모이면 박스에 종류가 붙습니다.</p>
+      <p class="hint only-roi">버튼을 누르고 있는 동안 사각형 안 화면이 초당 약 10장씩 쌓입니다. 숫자키로도 됩니다. 두 클래스 이상 모이면 판정을 시작합니다.</p>
       <div id="classList"></div>
       <form id="addForm"><input id="addName" maxlength="16" placeholder="새 클래스 이름" aria-label="새 클래스 이름"><button class="btn" type="submit">추가</button></form>
     </section>
@@ -161,16 +182,18 @@ input[type=range]{width:120px;accent-color:var(--ink)}
     <section>
       <h2 style="margin-bottom:10px">판정 설정</h2>
       <div class="set">
-        <label for="thr">판정 기준 신뢰도</label><input type="range" id="thr" min="40" max="95" value="70"><output id="thrOut">70%</output>
-        <label for="stab">기록까지 연속 프레임</label><input type="range" id="stab" min="2" max="30" value="8"><output id="stabOut">8</output>
+        <label for="det" class="only-auto">감지 기준 신뢰도</label><input class="only-auto" type="range" id="det" min="10" max="90" value="40"><output class="only-auto" id="detOut">40%</output>
+        <label for="thr">종류 판정 기준</label><input type="range" id="thr" min="40" max="95" value="70"><output id="thrOut">70%</output>
+        <label for="stab">기록까지 연속 프레임</label><input type="range" id="stab" min="2" max="30" value="6"><output id="stabOut">6</output>
         <label for="kVal">k (이웃 수)</label><input type="range" id="kVal" min="1" max="15" value="5"><output id="kOut">5</output>
-        <label for="smooth">결과 부드럽게</label><input type="range" id="smooth" min="0" max="90" value="50"><output id="smoothOut">50%</output>
+        <label for="smooth" class="only-roi">결과 부드럽게</label><input class="only-roi" type="range" id="smooth" min="0" max="90" value="50"><output class="only-roi" id="smoothOut">50%</output>
       </div>
+      <p class="note" id="modelInfo"></p>
     </section>
 
     <section>
       <h2>데이터</h2>
-      <p class="hint" id="saveNote">샘플은 이 브라우저에 자동 저장됩니다.</p>
+      <p class="hint" id="saveNote">종류 샘플은 이 브라우저에 자동 저장됩니다.</p>
       <div class="row">
         <button class="btn" id="exportBtn" type="button">JSON 내보내기</button>
         <button class="btn" id="importBtn" type="button">JSON 불러오기</button>
@@ -184,84 +207,163 @@ input[type=range]{width:120px;accent-color:var(--ink)}
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6/dist/knn-classifier.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const STORE = 'kkongjup-vision-v1';
 const EXTRA = ['#8e5ba8','#b04a4a','#5e7f2e','#a06a8a','#4f5fa8'];
+const BUTT = '#e8a04a';
 
 let classes = [
-  {id:'bg', name:'배경', desc:'꽁초 없는 바닥, 손, 낙엽, 이물질', color:'var(--c-bg)'},
+  {id:'bg', name:'배경', desc:'꽁초 없는 바닥, 손, 낙엽, 이물질 (영역 판정용)', color:'var(--c-bg)'},
   {id:'regular', name:'일반 꽁초', desc:'레종, 던힐, 말보로 등 지름 약 7.8mm', color:'var(--c-regular)'},
   {id:'slim', name:'얇은 꽁초', desc:'에쎄 등 슬림, 슈퍼슬림 지름 약 5.4mm', color:'var(--c-slim)'},
   {id:'heets', name:'전자담배 스틱', desc:'아이코스 테리아, 센티아, 릴 전용 스틱 등', color:'var(--c-heets)'}
 ];
-const counts = {}, thumbs = {};
-const tally = {};
-let net = null, knn = null, stream = null;
-let paused = false, collecting = null, lastAdd = 0, busy = false;
+const counts = {}, thumbs = {}, tally = {};
+let net = null, knn = null, stream = null, det = null, detInfo = null, detState = 'loading';
+let mode = 'auto', paused = false, collecting = null, lastAdd = 0, busy = false;
 let ema = {}, streak = 0, streakLabel = null, loggedLabel = null;
+let photo = null, lastBoxes = [];
 let frames = 0, fpsT = performance.now();
 const crop = document.createElement('canvas'); crop.width = crop.height = 224;
 const cctx = crop.getContext('2d', {willReadFrequently:true});
-const video = $('#video'), view = $('#view'), roi = $('#roi');
+const lb = document.createElement('canvas'); const lctx = lb.getContext('2d', {willReadFrequently:true});
+const video = $('#video'), view = $('#view'), roi = $('#roi'), ov = $('#ov'), still = $('#still');
+const octx = ov.getContext('2d');
 
-const cfg = () => ({thr:+$('#thr').value/100, stab:+$('#stab').value, k:+$('#kVal').value, sm:+$('#smooth').value/100, roi:+$('#roiSize').value/100});
+const cfg = () => ({det:+$('#det').value/100, thr:+$('#thr').value/100, stab:+$('#stab').value, k:+$('#kVal').value, sm:+$('#smooth').value/100, roi:+$('#roiSize').value/100});
 const cls = id => classes.find(c => c.id === id);
+const colorOf = id => { const c = cls(id); if(!c) return BUTT; return c.color.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(c.color.slice(4,-1)).trim() : c.color; };
 const total = () => Object.values(counts).reduce((a,b)=>a+b,0);
+const subs = () => classes.filter(c => c.id !== 'bg');
 const ready = () => classes.filter(c => counts[c.id] > 0).length >= 2;
+const subReady = () => subs().filter(c => counts[c.id] > 0).length >= 2;
 
 function setStatus(t, kind){const s=$('#status');s.textContent=t;s.className='status'+(kind?' '+kind:'')}
 function showMsg(t){$('#msgText').textContent=t;$('#msg').classList.toggle('on',!!t)}
 
+/* ---------- source geometry ---------- */
+function src(){ return photo ? {el:still, w:still.width, h:still.height, fit:'contain', mirror:false}
+                            : {el:video, w:video.videoWidth, h:video.videoHeight, fit:'cover', mirror:view.classList.contains('mirror')}; }
+function fit(s){
+  const r = view.getBoundingClientRect();
+  const k = s.fit==='cover' ? Math.max(r.width/s.w, r.height/s.h) : Math.min(r.width/s.w, r.height/s.h);
+  return {k, dx:(r.width - s.w*k)/2, dy:(r.height - s.h*k)/2, W:r.width, H:r.height};
+}
+
 /* ---------- UI rendering ---------- */
 function renderClasses(){
-  $('#classList').innerHTML = classes.map((c,i) => `
+  const list = mode==='auto' ? subs() : classes;
+  $('#classList').innerHTML = list.map(c => { const i = classes.indexOf(c); return `
     <div class="cls" style="--k:${c.color}">
       <div class="sw"></div>
       <div class="tx"><b>${esc(c.name)}</b>${i<9?`<span class="kbd">${i+1}</span>`:''}<small>${esc(c.desc||'')}</small></div>
       <div class="act">
         <button class="hold" type="button" data-id="${c.id}">수집<span class="n">${counts[c.id]||0}</span></button>
-        <button class="mini" type="button" data-reset="${c.id}" title="${esc(c.name)} 샘플 초기화" aria-label="${esc(c.name)} 샘플 초기화">비움</button>
+        <button class="mini" type="button" data-reset="${c.id}" aria-label="${esc(c.name)} 샘플 초기화">비움</button>
         ${c.custom?`<button class="mini" type="button" data-del="${c.id}" aria-label="${esc(c.name)} 클래스 삭제">삭제</button>`:''}
       </div>
       ${(thumbs[c.id]||[]).length?`<div class="thumbs">${thumbs[c.id].map(u=>`<img src="${u}" alt="">`).join('')}</div>`:''}
-    </div>`).join('');
-  $('#bars').innerHTML = classes.map(c => `
+    </div>`; }).join('');
+  if(mode==='roi') $('#bars').innerHTML = classes.map(c => `
     <div class="bar" style="--k:${c.color}" data-bar="${c.id}"><span class="nm">${esc(c.name)}</span><div class="tr"><div></div></div><em>0%</em></div>`).join('');
   renderTally();
 }
-function updateCount(id){
-  const b = document.querySelector(`.hold[data-id="${id}"] .n`); if(b) b.textContent = counts[id]||0;
-}
+function updateCount(id){ const b = document.querySelector(`.hold[data-id="${id}"] .n`); if(b) b.textContent = counts[id]||0; }
 function renderTally(){
-  $('#tally').innerHTML = classes.filter(c=>c.id!=='bg').map(c=>`<span><i class="dot" style="background:${c.color}"></i>${esc(c.name)} <b>${tally[c.id]||0}</b></span>`).join('');
+  const items = [{id:'butt', name:'꽁초', color:BUTT}, ...subs()];
+  $('#tally').innerHTML = items.filter(c=>c.id!=='butt'||mode==='auto').map(c=>`<span><i class="dot" style="background:${c.color}"></i>${esc(c.name)} <b>${tally[c.id]||0}</b></span>`).join('');
 }
 
-/* ---------- ROI geometry ---------- */
+/* ---------- ROI ---------- */
 function layoutRoi(){
   const r = view.getBoundingClientRect();
   roi.style.setProperty('--s', Math.round(Math.min(r.width, r.height) * cfg().roi) + 'px');
   $('#roiOut').textContent = Math.round(cfg().roi*100) + '%';
+  ov.width = Math.round(r.width * devicePixelRatio); ov.height = Math.round(r.height * devicePixelRatio);
+  if(photo) drawStill();
 }
-function grab(){
-  const vw = video.videoWidth, vh = video.videoHeight; if(!vw) return false;
-  // object-fit:cover 기준 화면에 보이는 영역과 동일하게 자르기
-  const r = view.getBoundingClientRect();
-  const scale = Math.max(r.width/vw, r.height/vh);
-  const side = Math.min(r.width, r.height) * cfg().roi / scale;
-  cctx.drawImage(video, (vw-side)/2, (vh-side)/2, side, side, 0, 0, 224, 224);
+function grabRoi(){
+  const s = src(); if(!s.w) return false;
+  const f = fit(s); const side = Math.min(f.W, f.H) * cfg().roi / f.k;
+  cctx.drawImage(s.el, (s.w-side)/2, (s.h-side)/2, side, side, 0, 0, 224, 224);
   return true;
 }
-function snap(size){
+function grabBox(b){
+  const s = src(); const side = Math.max(b.w, b.h) * 1.35;
+  cctx.fillStyle = '#777'; cctx.fillRect(0,0,224,224);
+  cctx.drawImage(s.el, b.x + b.w/2 - side/2, b.y + b.h/2 - side/2, side, side, 0, 0, 224, 224);
+}
+function snap(size, mirror){
   const c = document.createElement('canvas'); c.width = c.height = size;
   const x = c.getContext('2d');
-  if(view.classList.contains('mirror')){x.translate(size,0);x.scale(-1,1)}
+  if(mirror){x.translate(size,0);x.scale(-1,1)}
   x.drawImage(crop,0,0,size,size); return c.toDataURL('image/jpeg',.75);
 }
 
-/* ---------- camera ---------- */
+/* ---------- detector ---------- */
+async function loadDetector(){
+  try{
+    const r = await fetch('models/butt.json', {cache:'no-cache'});
+    if(!r.ok) throw new Error('pending');
+    detInfo = await r.json();
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency||2) : 1;
+    det = await ort.InferenceSession.create('models/' + (detInfo.file||'butt.onnx'), {executionProviders:['wasm'], graphOptimizationLevel:'all'});
+    lb.width = lb.height = detInfo.imgsz;
+    detState = 'ok';
+    const t = detInfo.test||{};
+    $('#modelInfo').textContent = `감지 모델 ${detInfo.base||''}, 입력 ${detInfo.imgsz}px, 테스트 정밀도 ${Math.round((t.precision||0)*100)}%, 재현율 ${Math.round((t.recall||0)*100)}%, mAP50 ${Math.round((t.map50||0)*100)}%. 학습 데이터: ${detInfo.dataset||''}.`;
+  }catch(e){
+    detState = e.message==='pending' ? 'pending' : 'error';
+    if(detState==='error') console.error(e);
+    $('#modelInfo').textContent = detState==='pending' ? '자동 감지 모델이 아직 배포되지 않았습니다. 학습이 끝나면 자동으로 올라오고, 새로고침하면 켜집니다.' : '자동 감지 모델을 불러오지 못했습니다. 새로고침해 보세요.';
+  }
+  refreshStatus();
+}
+function iou(a,b){const x1=Math.max(a.x,b.x),y1=Math.max(a.y,b.y),x2=Math.min(a.x+a.w,b.x+b.w),y2=Math.min(a.y+a.h,b.y+b.h);const i=Math.max(0,x2-x1)*Math.max(0,y2-y1);return i/(a.w*a.h+b.w*b.h-i+1e-6)}
+async function detect(){
+  const s = src(); const S = detInfo.imgsz;
+  const r = Math.min(S/s.w, S/s.h), nw = Math.round(s.w*r), nh = Math.round(s.h*r), px = (S-nw)/2, py = (S-nh)/2;
+  lctx.fillStyle = 'rgb(114,114,114)'; lctx.fillRect(0,0,S,S);
+  lctx.drawImage(s.el, 0, 0, s.w, s.h, px, py, nw, nh);
+  const d = lctx.getImageData(0,0,S,S).data, n = S*S, f = new Float32Array(3*n);
+  for(let i=0;i<n;i++){ f[i]=d[i*4]/255; f[n+i]=d[i*4+1]/255; f[2*n+i]=d[i*4+2]/255; }
+  const out = await det.run({[det.inputNames[0]]: new ort.Tensor('float32', f, [1,3,S,S])});
+  const o = out[det.outputNames[0]], N = o.dims[2], a = o.data, th = cfg().det;
+  const c = [];
+  for(let i=0;i<N;i++){ const sc = a[4*N+i]; if(sc < th) continue;
+    const w=a[2*N+i], h=a[3*N+i];
+    c.push({x:(a[i]-w/2-px)/r, y:(a[N+i]-h/2-py)/r, w:w/r, h:h/r, score:sc}); }
+  c.sort((p,q)=>q.score-p.score);
+  const keep = [];
+  for(const b of c){ if(keep.every(k=>iou(k,b)<0.45)) keep.push(b); if(keep.length>=20) break; }
+  return keep;
+}
+
+/* ---------- overlay ---------- */
+function drawBoxes(boxes){
+  const dpr = devicePixelRatio; octx.setTransform(dpr,0,0,dpr,0,0);
+  const s = src(), f = fit(s);
+  octx.clearRect(0,0,f.W,f.H);
+  octx.font = '600 14px "IBM Plex Sans KR",system-ui,sans-serif'; octx.textBaseline = 'bottom';
+  for(const b of boxes){
+    let x = f.dx + b.x*f.k, y = f.dy + b.y*f.k; const w = b.w*f.k, h = b.h*f.k;
+    if(s.mirror) x = f.W - x - w;
+    const col = b.sub ? colorOf(b.sub) : BUTT;
+    octx.lineWidth = 3; octx.strokeStyle = col; octx.strokeRect(x, y, w, h);
+    const label = (b.sub ? cls(b.sub).name : '꽁초') + ' ' + Math.round((b.sub ? b.subConf : b.score)*100) + '%';
+    const tw = octx.measureText(label).width + 12, ty = y > 24 ? y : y + h + 24;
+    octx.fillStyle = col; octx.fillRect(x - 1.5, ty - 22, tw, 22);
+    octx.fillStyle = '#fff'; octx.fillText(label, x + 4.5, ty - 4);
+  }
+}
+function clearBoxes(){ octx.setTransform(1,0,0,1,0,0); octx.clearRect(0,0,ov.width,ov.height); }
+
+/* ---------- camera / photo ---------- */
 async function listCams(selected){
   try{
     const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
@@ -271,32 +373,50 @@ async function listCams(selected){
 }
 async function startCam(deviceId){
   if(stream) stream.getTracks().forEach(t=>t.stop());
-  if(!navigator.mediaDevices?.getUserMedia){showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬으로 열어주세요.');return}
+  if(!navigator.mediaDevices?.getUserMedia){showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬으로 열거나 사진으로 테스트하세요.');return}
   try{
     stream = await navigator.mediaDevices.getUserMedia({audio:false, video: deviceId ? {deviceId:{exact:deviceId}, width:{ideal:1280}, height:{ideal:720}} : {width:{ideal:1280}, height:{ideal:720}, facingMode:'environment'}});
     video.srcObject = stream; await video.play(); showMsg('');
-    const id = stream.getVideoTracks()[0].getSettings().deviceId;
-    await listCams(id);
+    await listCams(stream.getVideoTracks()[0].getSettings().deviceId);
     video.onloadedmetadata = layoutRoi; layoutRoi();
   }catch(e){
-    showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요.'
-      : e.name==='NotFoundError' ? '연결된 카메라를 찾지 못했습니다. 웹캠을 꽂고 다시 연결하세요.'
+    showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요. 사진으로 테스트할 수도 있습니다.'
+      : e.name==='NotFoundError' ? '연결된 카메라를 찾지 못했습니다. 웹캠을 꽂고 다시 연결하거나 사진으로 테스트하세요.'
       : e.name==='NotReadableError' ? '다른 프로그램이 카메라를 쓰고 있습니다. 해당 프로그램을 닫고 다시 연결하세요.'
       : '카메라를 열지 못했습니다. ('+e.name+')');
   }
 }
+function drawStill(){
+  if(!photo) return;
+  const r = view.getBoundingClientRect();
+  still.width = photo.width; still.height = photo.height;
+  still.getContext('2d').drawImage(photo, 0, 0);
+  still.style.objectFit = 'contain';
+}
+async function openPhoto(file){
+  try{
+    photo = await createImageBitmap(file);
+    view.classList.add('photo'); showMsg(''); drawStill(); layoutRoi(); loggedLabel = null;
+    $('#photoBtn').textContent = '카메라로 돌아가기';
+  }catch(e){ $('#vNote').textContent = '이미지를 열지 못했습니다. JPG나 PNG 파일인지 확인하세요.'; }
+}
+function closePhoto(){ photo = null; view.classList.remove('photo'); $('#photoBtn').textContent = '사진으로 테스트'; clearBoxes(); if(!stream) startCam(); }
 
 /* ---------- collect ---------- */
 async function addSample(id){
-  if(!net || !grab()) return;
+  if(!net) return;
+  if(mode==='auto'){
+    if(!lastBoxes.length) return;
+    grabBox(lastBoxes.reduce((a,b)=>a.w*a.h>b.w*b.h?a:b));
+  }else if(!grabRoi()) return;
   const emb = tf.tidy(()=>net.infer(crop, true));
   knn.addExample(emb, id); emb.dispose();
   counts[id] = (counts[id]||0) + 1; updateCount(id);
   const t = thumbs[id] = thumbs[id]||[];
-  if(counts[id] % 5 === 1){ t.unshift(snap(68)); if(t.length>6) t.pop(); }
+  if(counts[id] % 5 === 1){ t.unshift(snap(68, src().mirror)); if(t.length>6) t.pop(); }
 }
 function startHold(id){
-  if(!cls(id)) return; collecting = id; roi.classList.add('rec');
+  if(!cls(id) || (mode==='auto' && id==='bg')) return; collecting = id; roi.classList.add('rec');
   roi.style.setProperty('--k', cls(id).color);
   document.querySelector(`.hold[data-id="${id}"]`)?.classList.add('on');
 }
@@ -306,8 +426,8 @@ function stopHold(){
   collecting = null; roi.classList.remove('rec'); renderClasses(); save();
 }
 
-/* ---------- predict loop ---------- */
-function paintBars(conf, top){
+/* ---------- ROI mode verdict ---------- */
+function paintBars(conf){
   for(const c of classes){
     const el = document.querySelector(`[data-bar="${c.id}"]`); if(!el) continue;
     const v = conf[c.id]||0;
@@ -316,15 +436,15 @@ function paintBars(conf, top){
   }
 }
 function verdict(id, conf){
-  const {thr} = cfg(); const tag = $('#tag');
-  if(!id){$('#vName').textContent='대기';$('#vName').style.color='';$('#vConf').textContent='';tag.classList.remove('on');roi.style.setProperty('--k','#ffffff');return}
+  const {thr} = cfg(); const tag = $('#tag'), vn = $('#vName');
+  if(!id){vn.textContent='대기';vn.style.color='';$('#vConf').textContent='';tag.classList.remove('on');roi.style.setProperty('--k','#ffffff');return}
   const c = cls(id);
   if(conf < thr){
-    $('#vName').textContent='판정 보류'; $('#vName').style.color='var(--mute)';
+    vn.textContent='판정 보류'; vn.style.color='var(--mute)';
     $('#vConf').textContent=Math.round(conf*100)+'%'; tag.classList.remove('on');
     if(!collecting) roi.style.setProperty('--k','#ffffff'); return;
   }
-  $('#vName').textContent=c.name; $('#vName').style.color=id==='bg'?'var(--mute)':c.color;
+  vn.textContent=c.name; vn.style.color=id==='bg'?'var(--mute)':c.color;
   $('#vConf').textContent=Math.round(conf*100)+'%';
   if(!collecting){
     roi.style.setProperty('--k', id==='bg' ? '#ffffff' : c.color);
@@ -332,49 +452,102 @@ function verdict(id, conf){
     tag.classList.toggle('on', id!=='bg');
   }
 }
-function track(id, conf){
-  const {thr, stab} = cfg();
-  const lab = (id && conf >= thr) ? id : null;
+function track(lab, conf, thumbFn){
+  const {stab} = cfg();
   if(lab === streakLabel) streak++; else { streakLabel = lab; streak = 1; }
   if(streak < stab) return;
-  if(lab && lab !== 'bg'){ if(loggedLabel !== lab){ loggedLabel = lab; logHit(lab, conf); } }
+  if(lab && lab !== 'bg'){ if(loggedLabel !== lab){ loggedLabel = lab; logHit(lab, conf, thumbFn); } }
   else loggedLabel = null;
 }
-function logHit(id, conf){
-  const c = cls(id); tally[id] = (tally[id]||0)+1; renderTally();
+function logHit(id, conf, thumbFn){
+  const c = id==='butt' ? {name:'꽁초', color:BUTT} : cls(id);
+  tally[id] = (tally[id]||0)+1; renderTally();
   const strip = $('#strip'); strip.querySelector('.empty')?.remove();
   const d = document.createElement('div'); d.className='shot'; d.style.setProperty('--k', c.color);
   const t = new Date().toLocaleTimeString('ko-KR',{hour12:false});
-  d.innerHTML = `<img src="${snap(96)}" alt="${esc(c.name)} 감지 캡처"><b>${esc(c.name)}</b><span>${t} ${Math.round(conf*100)}%</span>`;
+  d.innerHTML = `<img src="${thumbFn()}" alt="${esc(c.name)} 감지 캡처"><b>${esc(c.name)}</b><span>${t} ${Math.round(conf*100)}%</span>`;
   strip.prepend(d); while(strip.children.length>40) strip.lastChild.remove();
-  roi.classList.remove('hit'); void roi.offsetWidth; roi.classList.add('hit');
+  if(mode==='roi'){ roi.classList.remove('hit'); void roi.offsetWidth; roi.classList.add('hit'); }
+}
+
+/* ---------- auto mode ---------- */
+async function autoStep(){
+  const boxes = await detect();
+  const k = Math.min(cfg().k, total());
+  if(subReady() && net){
+    for(const b of boxes.slice(0,4)){
+      grabBox(b);
+      const emb = tf.tidy(()=>net.infer(crop, true));
+      const res = await knn.predictClass(emb, k); emb.dispose();
+      let best=null, bv=0; for(const c of subs()){ const v=res.confidences[c.id]||0; if(v>bv){bv=v;best=c.id} }
+      if(best && bv >= cfg().thr){ b.sub = best; b.subConf = bv; }
+    }
+  }
+  lastBoxes = boxes; drawBoxes(boxes);
+  const vn = $('#vName');
+  if(boxes.length){ vn.textContent = '꽁초 '+boxes.length+'개'; vn.style.color = BUTT; $('#vConf').textContent = '최고 '+Math.round(boxes[0].score*100)+'%'; }
+  else { vn.textContent = '꽁초 없음'; vn.style.color = 'var(--mute)'; $('#vConf').textContent = ''; }
+  $('#bars').innerHTML = boxes.slice(0,6).map((b,i)=>{ const c = b.sub ? cls(b.sub) : null; return `<div class="det" style="--k:${c?c.color:BUTT}"><i></i><span>${esc(c?c.name:'꽁초')}${b.sub?` <em>종류 ${Math.round(b.subConf*100)}%</em>`:''}</span><em>${Math.round(b.score*100)}%</em></div>`; }).join('');
+  $('#vNote').textContent = boxes.length && !subReady() ? '종류까지 나누려면 아래에서 두 종류 이상 샘플을 모으세요.' : '';
+  const top = boxes[0];
+  track(top ? (top.sub || 'butt') : null, top ? top.score : 0, () => { grabBox(top); return snap(96, src().mirror); });
+}
+
+/* ---------- ROI mode ---------- */
+async function roiStep(){
+  if(ready() && grabRoi()){
+    const emb = tf.tidy(()=>net.infer(crop, true));
+    const res = await knn.predictClass(emb, Math.min(cfg().k, total())); emb.dispose();
+    const a = 1 - cfg().sm;
+    for(const c of classes){ const v = res.confidences[c.id]||0; ema[c.id] = ema[c.id]==null ? v : ema[c.id]*(1-a) + v*a; }
+    let top = null, best = -1; for(const c of classes){ if((ema[c.id]||0) > best){best = ema[c.id]; top = c.id} }
+    paintBars(ema); verdict(top, best);
+    track(top && best >= cfg().thr ? top : null, best, () => snap(96, src().mirror));
+    $('#vNote').textContent = '';
+  }else{
+    verdict(null); paintBars({});
+    $('#vNote').textContent = '두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다. 배경 클래스부터 채우는 것을 권장합니다.';
+  }
 }
 
 async function loop(){
   requestAnimationFrame(loop);
-  if(!net || paused || busy || !video.videoWidth) return;
+  if(paused || busy) return;
+  const s = src(); if(!s.w) return;
   busy = true;
   const t0 = performance.now();
   try{
-    if(collecting){
-      if(t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); }
-    }else if(ready() && grab()){
-      const emb = tf.tidy(()=>net.infer(crop, true));
-      const res = await knn.predictClass(emb, Math.min(cfg().k, total())); emb.dispose();
-      const a = 1 - cfg().sm;
-      for(const c of classes){ const v = res.confidences[c.id]||0; ema[c.id] = ema[c.id]==null ? v : ema[c.id]*(1-a) + v*a; }
-      let top = null, best = -1; for(const c of classes){ if((ema[c.id]||0) > best){best = ema[c.id]; top = c.id} }
-      paintBars(ema, top); verdict(top, best); track(top, best);
-      $('#vNote').textContent = '';
-    }else if(!ready()){
-      verdict(null); paintBars({});
-      $('#vNote').textContent = '두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다. 배경 클래스부터 채우는 것을 권장합니다.';
+    if(mode==='auto'){
+      if(detState==='ok'){
+        await autoStep();
+        if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); }
+      }
+    }else if(net){
+      if(collecting){ if(t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); } }
+      else await roiStep();
     }
   }catch(e){ console.error(e) }
   $('#ms').textContent = Math.round(performance.now()-t0);
   frames++; const now = performance.now();
   if(now - fpsT > 1000){ $('#fps').textContent = Math.round(frames*1000/(now-fpsT)); frames = 0; fpsT = now; }
   busy = false;
+}
+
+function setMode(m){
+  mode = m; $('#app').classList.toggle('auto', m==='auto'); view.classList.toggle('auto', m==='auto');
+  $('#modeAuto').setAttribute('aria-pressed', m==='auto'); $('#modeRoi').setAttribute('aria-pressed', m==='roi');
+  streak = 0; streakLabel = null; loggedLabel = null; ema = {}; lastBoxes = [];
+  clearBoxes(); $('#tag').classList.remove('on'); $('#bars').innerHTML=''; $('#vName').textContent='대기'; $('#vName').style.color=''; $('#vConf').textContent=''; $('#vNote').textContent='';
+  renderClasses(); refreshStatus();
+  try{ localStorage.setItem(STORE+'-mode', m) }catch(_){}
+}
+function refreshStatus(){
+  if(mode==='auto'){
+    if(detState==='ok') setStatus('자동 감지 켜짐', 'ok');
+    else if(detState==='pending'){ setStatus('감지 모델 준비 중'); $('#vNote').textContent = '자동 감지 모델을 학습하는 중입니다. 그동안 영역 판정 방식은 쓸 수 있습니다.'; }
+    else if(detState==='error') setStatus('감지 모델 로드 실패', 'err');
+    else setStatus('모델 불러오는 중');
+  }else setStatus(net ? '영역 판정 켜짐 ('+tf.getBackend().toUpperCase()+')' : '모델 불러오는 중', net ? 'ok' : '');
 }
 
 /* ---------- persistence ---------- */
@@ -410,7 +583,7 @@ list.addEventListener('pointerup', stopHold); list.addEventListener('pointercanc
 list.addEventListener('lostpointercapture', stopHold);
 list.addEventListener('click', e=>{
   const r = e.target.closest('[data-reset]'), d = e.target.closest('[data-del]');
-  if(r){ const id=r.dataset.reset; if(counts[id]){ knn.clearClass(id); } counts[id]=0; thumbs[id]=[]; ema={}; renderClasses(); save(); }
+  if(r){ const id=r.dataset.reset; if(counts[id]) knn.clearClass(id); counts[id]=0; thumbs[id]=[]; ema={}; renderClasses(); save(); }
   if(d){ const id=d.dataset.del; if(counts[id]) knn.clearClass(id); delete counts[id]; classes = classes.filter(c=>c.id!==id); ema={}; renderClasses(); save(); }
 });
 list.addEventListener('keydown', e=>{const b=e.target.closest('.hold'); if(b && (e.key===' '||e.key==='Enter') && !e.repeat){e.preventDefault(); startHold(b.dataset.id)}});
@@ -424,17 +597,23 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('keyup', e=>{ if(/^[1-9]$/.test(e.key)) stopHold(); });
 window.addEventListener('blur', stopHold);
 
-function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', paused); $('#pauseBtn').firstChild.textContent = paused ? '재개 ' : '일시정지 '; paused ? video.pause() : video.play(); }
+function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', paused); $('#pauseBtn').firstChild.textContent = paused ? '재개 ' : '일시정지 '; if(!photo) paused ? video.pause() : video.play(); }
 $('#pauseBtn').addEventListener('click', togglePause);
 $('#mirrorBtn').addEventListener('click', e=>{ const on = view.classList.toggle('mirror'); e.currentTarget.setAttribute('aria-pressed', on); });
-$('#camSel').addEventListener('change', e=>startCam(e.target.value));
+$('#camSel').addEventListener('change', e=>{ if(photo) closePhoto(); startCam(e.target.value); });
 $('#retry').addEventListener('click', ()=>startCam($('#camSel').value||undefined));
+$('#modeAuto').addEventListener('click', ()=>setMode('auto'));
+$('#modeRoi').addEventListener('click', ()=>setMode('roi'));
+$('#photoBtn').addEventListener('click', ()=> photo ? closePhoto() : $('#photoFile').click());
+$('#photoFile').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) openPhoto(f); e.target.value=''; });
+view.addEventListener('dragover', e=>e.preventDefault());
+view.addEventListener('drop', e=>{ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f && f.type.startsWith('image/')) openPhoto(f); });
 $('#roiSize').addEventListener('input', layoutRoi);
 new ResizeObserver(layoutRoi).observe(view);
-for(const [id,fmt] of [['thr',v=>v+'%'],['stab',v=>v],['kVal',v=>v],['smooth',v=>v+'%']]){
-  const out = $('#'+(id==='kVal'?'kOut':id+'Out')); $('#'+id).addEventListener('input', e=>out.textContent=fmt(e.target.value));
+for(const [id,out,fmt] of [['det','detOut',v=>v+'%'],['thr','thrOut',v=>v+'%'],['stab','stabOut',v=>v],['kVal','kOut',v=>v],['smooth','smoothOut',v=>v+'%']]){
+  $('#'+id).addEventListener('input', e=>$('#'+out).textContent=fmt(e.target.value));
 }
-$('#clearLog').addEventListener('click', ()=>{ for(const k in tally) delete tally[k]; renderTally(); $('#strip').innerHTML='<span class="empty">같은 판정이 안정적으로 이어지면 여기에 캡처가 남습니다.</span>'; loggedLabel=null; });
+$('#clearLog').addEventListener('click', ()=>{ for(const k in tally) delete tally[k]; renderTally(); $('#strip').innerHTML='<span class="empty">꽁초가 안정적으로 잡히면 여기에 캡처가 남습니다.</span>'; loggedLabel=null; });
 $('#addForm').addEventListener('submit', e=>{
   e.preventDefault(); const name = $('#addName').value.trim(); if(!name) return;
   const n = classes.filter(c=>c.custom).length;
@@ -467,8 +646,10 @@ $('#wipeBtn').addEventListener('click', e=>{
 });
 
 /* ---------- boot ---------- */
-renderClasses();
+try{ const m = localStorage.getItem(STORE+'-mode'); if(m==='roi') mode='roi'; }catch(_){}
+setMode(mode);
 startCam();
+if(typeof ort !== 'undefined') loadDetector(); else { detState='error'; refreshStatus(); }
 (async()=>{
   try{
     if(typeof tf==='undefined' || typeof mobilenet==='undefined') throw new Error('lib');
@@ -476,11 +657,8 @@ startCam();
     knn = knnClassifier.create();
     try{ net = await mobilenet.load({version:2, alpha:1.0}); }catch(_){ net = await mobilenet.load({version:1, alpha:1.0}); }
     try{ const s = localStorage.getItem(STORE); if(s){ restore(JSON.parse(s)); renderClasses(); $('#saveNote').textContent=`저장된 샘플 ${total()}장을 불러왔습니다.`; } }catch(_){}
-    setStatus('준비됨 ('+tf.getBackend().toUpperCase()+')', 'ok');
-  }catch(e){
-    console.error(e); setStatus('모델 로드 실패', 'err');
-    $('#vNote').textContent='인식 모델을 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침하세요.';
-  }
+  }catch(e){ console.error(e); if(mode==='roi') setStatus('분류 모델 로드 실패', 'err'); }
+  refreshStatus();
 })();
 requestAnimationFrame(loop);
 }
