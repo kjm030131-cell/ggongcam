@@ -3,309 +3,389 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>꽁줍이 인식 실험</title>
+<title>꽁줍이 비전</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /*
-VOICE   현장 계측기. 조용하고 정확하게, 판정 결과만 크게.
-IDEA    로봇 비전 보드의 검사창: 바닥을 내려다보는 카메라와 판정 사각형.
-PICTURE 실시간 카메라 화면 + 판정 사각형(모서리 색이 클래스 색으로 바뀜).
-COLOUR  흰 바탕, 먹색 글자, 필터 코르크색(일반), 슬레이트(슬림), 청록(전자담배 스틱).
-TYPE    IBM Plex Sans KR 하나, 숫자는 tabular.
+VOICE   로봇 운용 콘솔. 장식 없이 상태와 숫자가 먼저 읽히게.
+IDEA    로봇 메인 카메라 화면 + 인스펙터. 화면 위에 집기 영역과 목표까지의 선이 그려진다.
+PICTURE 카메라 뷰포트가 첫 화면의 대부분. 목표 꽁초에 괄호형 마커와 mm 오프셋.
+COLOUR  그라파이트 면, 목표는 앰버, 집기 영역은 시안, 오류만 빨강. 색마다 의미가 하나.
+TYPE    IBM Plex Sans KR, 숫자는 tabular. 콘솔 출력만 Plex Mono.
 */
-:root{color-scheme:light dark;
---bg:light-dark(#ffffff,#14171a);--panel:light-dark(#f2f3f1,#1c2024);--line:light-dark(#dcdfdb,#2d3237);
---ink:light-dark(#16191b,#eceeea);--mute:light-dark(#62686d,#9aa1a6);--view:#0d1012;
---c-bg:#8a9196;--c-regular:#c27a2c;--c-slim:#3f6e9a;--c-heets:#23806f;--focus:light-dark(#1d5fd1,#7fb0ff)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root{color-scheme:dark;
+--bg:#14181c;--panel:#1a1f24;--panel2:#20262c;--line:#2c343b;--line2:#3a434b;
+--ink:#e4e8eb;--mute:#8d969e;--dim:#5f6870;
+--tgt:#f2a541;--zone:#4cc3d9;--ok:#62c48a;--err:#ec5f57;
+--c-regular:#d98b3a;--c-slim:#6f9fd1;--c-heets:#3fb59c;
+--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow-x:clip;font-variant-numeric:tabular-nums}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-variant-numeric:tabular-nums;overflow-x:clip}
 button,select,input{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-h2{font-size:15px;font-weight:600;margin:0 0 4px}
-.top{display:flex;align-items:center;gap:16px;padding:12px max(2.5vw,16px);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;font-size:17px}
-.brand b{font-weight:700}.brand span{color:var(--mute);font-size:14px}
-.status{margin-left:auto;font-size:14px;display:flex;align-items:center;gap:8px;color:var(--mute)}
-.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mute)}
-.status.ok::before{background:var(--c-heets)}.status.err::before{background:#c43d3d}
-.perf{font-size:13px;color:var(--mute);white-space:nowrap}
-.app{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:0;min-height:calc(100vh - 57px)}
-.stage{padding:20px max(2.5vw,16px);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
-.view{position:relative;background:var(--view);border-radius:6px;overflow:hidden;aspect-ratio:4/3;width:100%}
-.view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+:focus-visible{outline:2px solid var(--zone);outline-offset:1px}
+h2{font-size:13px;font-weight:600;margin:0;color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* top bar */
+.top{height:48px;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;white-space:nowrap}
+.brand small{font-weight:400;color:var(--dim);font-size:12px}
+.chips{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow:hidden}
+.chip{display:flex;align-items:center;gap:7px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:3px;font-size:12px;color:var(--mute);white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.chip.ok::before{background:var(--ok)}.chip.warn::before{background:var(--tgt)}.chip.err::before{background:var(--err)}
+.chip.plain::before{display:none}
+.chip b{color:var(--ink);font-weight:500}
+
+/* layout */
+.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:calc(100vh - 48px);min-height:620px}
+.stage{display:grid;grid-template-rows:minmax(0,1fr) auto 190px;border-right:1px solid var(--line);min-height:0}
+.view{position:relative;background:#0c0f11;overflow:hidden}
+.view video,.view canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .view.mirror video{transform:scaleX(-1)}
-.roi{position:absolute;left:50%;top:50%;width:var(--s,200px);height:var(--s,200px);transform:translate(-50%,-50%);box-shadow:0 0 0 200vmax rgba(8,10,12,.5);--k:#ffffff;transition:--k .2s}
-.roi i{position:absolute;width:26px;height:26px;border:3px solid var(--k);transition:border-color .18s}
-.roi i:nth-child(1){left:-2px;top:-2px;border-right:0;border-bottom:0}
-.roi i:nth-child(2){right:-2px;top:-2px;border-left:0;border-bottom:0}
-.roi i:nth-child(3){left:-2px;bottom:-2px;border-right:0;border-top:0}
-.roi i:nth-child(4){right:-2px;bottom:-2px;border-left:0;border-top:0}
-.roi.rec{outline:2px dashed rgba(255,255,255,.7);outline-offset:4px}
-.roi.hit{animation:hit .5s ease-out}
-@keyframes hit{0%{box-shadow:0 0 0 0 var(--k),0 0 0 200vmax rgba(8,10,12,.5)}100%{box-shadow:0 0 0 22px transparent,0 0 0 200vmax rgba(8,10,12,.5)}}
-.tag{position:absolute;left:-2px;bottom:calc(100% + 8px);background:var(--k);color:#fff;font-size:14px;font-weight:600;padding:3px 10px;border-radius:3px;white-space:nowrap;opacity:0;transition:opacity .15s}
-.tag.on{opacity:1}
-.msg{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:14px;padding:24px;text-align:center;color:#e8eaea;background:var(--view)}
-.msg.on{display:grid}.msg p{margin:0;max-width:44ch}
-.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
-.field{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute)}
-select{min-height:40px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:0 10px;font-size:15px;max-width:260px}
-.btn{min-height:40px;padding:0 14px;border:1px solid var(--line);background:var(--bg);border-radius:4px;cursor:pointer;font-size:15px;white-space:nowrap}
-.btn:hover{background:var(--panel)}
-.btn.solid{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.btn.warn{color:#c43d3d}.btn.arm{background:#c43d3d;color:#fff;border-color:#c43d3d}
-.btn[aria-pressed=true]{background:var(--panel);border-color:var(--ink)}
-input[type=range]{width:120px;accent-color:var(--ink)}
-.log{border-top:1px solid var(--line);padding-top:14px}
-.loghead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-bottom:10px}
-.tally{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
-.tally span{display:flex;align-items:center;gap:6px}
-.dot{width:10px;height:10px;border-radius:2px;flex:none}
-.loghead .btn{margin-left:auto;min-height:34px;font-size:14px}
-.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;min-height:118px}
-.strip .empty{color:var(--mute);font-size:14px;align-self:center}
-.shot{flex:none;width:96px;font-size:12px;line-height:1.35}
-.shot img{width:96px;height:96px;display:block;border-radius:4px;border-bottom:4px solid var(--k);object-fit:cover;background:var(--panel)}
-.shot b{display:block;font-weight:600;margin-top:4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.shot span{color:var(--mute)}
-.side{display:flex;flex-direction:column}
-.side>section{padding:18px max(2vw,18px);border-bottom:1px solid var(--line)}
-.result{background:var(--panel)}
-.verdict{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;min-height:56px}
-.verdict #vName{font-size:clamp(30px,3.4vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
-.verdict #vConf{font-size:20px;color:var(--mute)}
-.bar{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3.2em;align-items:center;gap:10px;font-size:14px;margin:7px 0}
-.bar .tr{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
-.bar .tr div{height:100%;background:var(--k);width:0;transition:width .12s linear}
-.bar em{font-style:normal;text-align:right}
-.bar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.thr{position:relative}
-.note{font-size:13px;color:var(--mute);margin:6px 0 0}
-.hint{font-size:14px;color:var(--mute);margin:0 0 12px}
-.cls{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.cls:first-child{border-top:0}
-.cls .sw{width:14px;height:40px;border-radius:3px;background:var(--k)}
-.cls .tx b{font-weight:600;font-size:15px}.cls .tx small{display:block;color:var(--mute);font-size:13px;line-height:1.4}
-.cls .act{display:flex;gap:6px;align-items:center}
-.hold{min-height:44px;min-width:104px;border:1px solid var(--k);color:var(--ink);background:transparent;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap}
-.hold .n{font-weight:400;color:var(--mute);margin-left:6px}
-.hold.on{background:var(--k);color:#fff}.hold.on .n{color:#fff}
-.mini{min-height:44px;width:40px;border:1px solid var(--line);background:transparent;border-radius:4px;cursor:pointer;color:var(--mute);font-size:13px}
-.mini:hover{color:#c43d3d}
-.thumbs{grid-column:2/4;display:flex;gap:4px}
-.thumbs img{width:34px;height:34px;border-radius:3px;object-fit:cover}
-#addForm{display:flex;gap:8px;margin-top:12px}
-#addForm input{flex:1;min-height:40px;border:1px solid var(--line);border-radius:4px;padding:0 10px;font-size:16px;background:var(--bg)}
-.set{display:grid;grid-template-columns:minmax(0,1fr) auto 3.4em;gap:6px 12px;align-items:center;font-size:14px}
-.set output{text-align:right}
-.set label{color:var(--ink)}
-.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.kbd{display:inline-block;min-width:20px;padding:0 5px;border:1px solid var(--line);border-radius:3px;font-size:12px;text-align:center;color:var(--mute);margin-left:2px}
-@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.stage{border-right:0;border-bottom:1px solid var(--line)}}
-@media(max-width:600px){.perf{display:none}.brand span{display:none}.bar{grid-template-columns:6em minmax(0,1fr) 3em}.hold{min-width:88px}}
-@media(prefers-reduced-motion:reduce){.roi.hit{animation:none}*{transition:none!important}}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.seg button{min-height:40px;padding:0 14px;border:0;background:var(--bg);cursor:pointer;font-size:15px;white-space:nowrap}
-.seg button+button{border-left:1px solid var(--line)}
-.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-.view canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #still{display:none}.view.photo #still{display:block}.view.photo video{visibility:hidden}
-.view.auto .roi{display:none}
-.det{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:15px;padding:7px 0;border-top:1px solid var(--line)}
+#ov{pointer-events:none}
+.msg{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:12px;padding:24px;text-align:center;color:var(--ink);background:#0c0f11}
+.msg.on{display:grid}.msg p{margin:0;max-width:46ch;color:var(--mute)}
+.banner{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px);padding:6px 10px;border-radius:3px;background:rgba(20,24,28,.88);border:1px solid var(--line2);font-size:12px;color:var(--mute);display:none}
+.banner.on{display:block}
+.srcbadge{position:absolute;right:12px;top:12px;padding:3px 8px;border-radius:3px;background:rgba(20,24,28,.85);border:1px solid var(--line2);font-size:12px;color:var(--mute)}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;padding:8px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.btn{height:32px;padding:0 11px;border:1px solid var(--line2);background:var(--panel2);border-radius:3px;cursor:pointer;font-size:13px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--mute)}
+.btn[aria-pressed=true]{background:#2b3a42;border-color:var(--zone);color:#fff}
+.btn.pri{background:var(--ink);color:#14181c;border-color:var(--ink)}
+.btn.danger{color:var(--err)}.btn.arm{background:var(--err);color:#fff;border-color:var(--err)}
+.btn:disabled{opacity:.45;cursor:default}
+kbd{font:500 11px var(--mono);color:var(--dim);border:1px solid var(--line2);border-radius:2px;padding:0 4px}
+select,input[type=text],input[type=number],input[type=url]{height:32px;border:1px solid var(--line2);background:var(--bg);border-radius:3px;padding:0 8px;font-size:13px}
+select{max-width:200px}
+input[type=range]{accent-color:var(--zone);width:100%}
+
+/* bottom panes */
+.bottom{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+.pane:last-child{border-right:0}
+.phead{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-bottom:1px solid var(--line);flex:none}
+.phead .btn{height:26px;font-size:12px;padding:0 8px;margin-left:auto}
+.phead .btn+.btn{margin-left:0}
+.phead span{color:var(--dim);font-size:12px}
+.events{display:flex;gap:8px;overflow-x:auto;padding:10px;flex:1;align-items:flex-start}
+.ev{flex:none;width:92px;font-size:11px;line-height:1.35;color:var(--mute)}
+.ev img{display:block;width:92px;height:92px;object-fit:cover;border-radius:2px;border:1px solid var(--line);border-bottom:3px solid var(--k)}
+.ev b{display:block;color:var(--ink);font-weight:500;font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--dim);font-size:12px;padding:2px}
+.console{flex:1;overflow:auto;margin:0;padding:8px 10px;font:12px/1.55 var(--mono);color:var(--mute);white-space:pre-wrap;word-break:break-all}
+.console .rx{color:var(--ink)}.console .sys{color:var(--zone)}.console .er{color:var(--err)}
+.sendrow{display:flex;gap:6px;padding:6px 8px;border-top:1px solid var(--line)}
+.sendrow input{flex:1;font-family:var(--mono)}
+
+/* inspector */
+.side{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.tabs{display:flex;border-bottom:1px solid var(--line);flex:none}
+.tabs button{flex:1;height:40px;border:0;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:13px;color:var(--mute)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.panel{display:none;overflow:auto;flex:1}
+.panel.on{display:block}
+.sec{padding:14px;border-bottom:1px solid var(--line)}
+.sec>h2{margin-bottom:10px}
+.hint{color:var(--mute);font-size:12px;margin:0 0 10px}
+
+.readout{padding:14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.rhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.rname{font-size:22px;font-weight:600;line-height:1.2}
+.rconf{color:var(--mute);font-size:13px}
+.xy{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;margin:12px 0 10px;overflow:hidden}
+.xy div{background:var(--panel);padding:8px 10px}
+.xy span{display:block;font-size:11px;color:var(--dim)}
+.xy b{font-size:24px;font-weight:600;letter-spacing:-.01em}
+.dir{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.zstate{padding:2px 8px;border-radius:2px;font-size:12px;border:1px solid var(--line2);color:var(--mute);white-space:nowrap}
+.zstate.in{background:var(--zone);border-color:var(--zone);color:#0c1a1e;font-weight:600}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:12px;margin:10px 0 0}
+.dl dt{color:var(--dim)}.dl dd{margin:0;text-align:right}
+
+.detlist{font-size:13px}
+.det{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
 .det:first-child{border-top:0}
-.det i{width:14px;height:14px;border-radius:3px;background:var(--k)}
-.det em{font-style:normal;color:var(--mute)}
-.only-roi{}.app.auto .only-roi{display:none}.app:not(.auto) .only-auto{display:none}
+.det i{width:10px;height:10px;border-radius:2px;background:var(--k)}
+.det .mm{color:var(--mute);font-size:12px}
+.det.t{color:var(--tgt)}
+
+.form{display:grid;grid-template-columns:minmax(0,1fr) 120px 46px;gap:8px 10px;align-items:center;font-size:13px}
+.form output{text-align:right;color:var(--mute);font-size:12px}
+.form label{color:var(--ink)}
+.form .wide{grid-column:2/4}
+.form select,.form input[type=number],.form input[type=url],.form input[type=text]{width:100%;max-width:none}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.stat{display:flex;gap:16px;font-size:12px;color:var(--mute);margin:8px 0}
+.stat b{color:var(--ink);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:10px}
+.grid figure{margin:0;position:relative}
+.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:2px;display:block;border:1px solid var(--line)}
+.grid figcaption{position:absolute;right:3px;bottom:3px;font-size:10px;background:rgba(0,0,0,.7);padding:0 4px;border-radius:2px}
+
+.cls{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.cls:first-child{border-top:0}
+.cls .sw{width:4px;height:34px;border-radius:2px;background:var(--k)}
+.cls b{font-weight:500}.cls small{display:block;color:var(--dim);font-size:11px}
+.cls .act{display:flex;gap:4px}
+.hold{height:34px;min-width:78px;border:1px solid var(--k);background:transparent;border-radius:3px;cursor:pointer;font-size:12px;font-weight:600;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap}
+.hold .n{font-weight:400;color:var(--mute);margin-left:4px}
+.hold.on{background:var(--k);color:#111}.hold.on .n{color:#111}
+.mini{height:34px;padding:0 8px;border:1px solid var(--line2);background:transparent;border-radius:3px;cursor:pointer;color:var(--mute);font-size:12px}
+.mini:hover{color:var(--err)}
+#addForm{display:flex;gap:6px;margin-top:10px}#addForm input{flex:1}
+
+.help{position:fixed;inset:0;background:rgba(5,7,9,.6);display:none;place-items:center;z-index:5}
+.help.on{display:grid}
+.help>div{background:var(--panel);border:1px solid var(--line2);border-radius:4px;padding:18px 20px;width:min(420px,92vw)}
+.help dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:12px 0 0;font-size:13px}
+.help dd{margin:0;color:var(--mute)}
+
+@media(max-width:1000px){
+  .app{display:flex;flex-direction:column;height:auto}
+  .stage{display:contents}
+  .view{order:1}.toolbar{order:2}.side{order:3}.bottom{order:4;height:240px;border-top:1px solid var(--line)}
+  .view{aspect-ratio:4/3}
+  .side{border-top:1px solid var(--line)}
+  .panel{overflow:visible}
+  .chips .hide-s{display:none}
+}
+@media(max-width:600px){.bottom{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr;height:420px}.pane{border-right:0;border-bottom:1px solid var(--line)}.brand small{display:none}.chips .hide-xs{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand">
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="2" y="8" width="18" height="6" rx="1.5" fill="#e9e4d8" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="8" width="7" height="6" rx="1.5" fill="#c27a2c"/></svg>
-    <b>꽁줍이</b><span>꽁초 인식 실험</span>
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="1.5" y="7" width="17" height="6" rx="1" fill="none" stroke="#e4e8eb" stroke-width="1.3"/><rect x="1.5" y="7" width="6.5" height="6" rx="1" fill="#f2a541"/></svg>
+    꽁줍이 비전 <small>main camera proto 0.3</small>
   </div>
-  <div class="status" id="status">모델 불러오는 중</div>
-  <div class="perf"><span id="fps">0</span> fps &nbsp; <span id="ms">0</span> ms</div>
+  <div class="chips">
+    <div class="chip" id="chipModel">감지 모델 <b>불러오는 중</b></div>
+    <div class="chip hide-s" id="chipLink">로봇 링크 <b>끊김</b></div>
+    <div class="chip plain hide-xs"><b id="fps">0</b> fps</div>
+    <div class="chip plain hide-xs"><b id="ms">0</b> ms</div>
+    <button class="btn" id="helpBtn" type="button" aria-label="단축키 보기">단축키 <kbd>?</kbd></button>
+  </div>
 </header>
 
-<main class="app auto" id="app">
+<main class="app">
   <section class="stage">
-    <div class="view mirror auto" id="view">
+    <div class="view" id="view">
       <video id="video" playsinline muted></video>
       <canvas id="still"></canvas>
       <canvas id="ov"></canvas>
-      <div class="roi" id="roi"><i></i><i></i><i></i><i></i><div class="tag" id="tag"></div></div>
-      <div class="msg" id="msg"><p id="msgText"></p><button class="btn solid" id="retry" type="button">카메라 다시 연결</button></div>
+      <div class="banner" id="banner"></div>
+      <div class="srcbadge" id="srcBadge">카메라</div>
+      <div class="msg" id="msg"><p id="msgText"></p><div class="row"><button class="btn pri" id="retry" type="button">카메라 다시 연결</button><button class="btn" id="msgFile" type="button">파일로 테스트</button></div></div>
     </div>
 
     <div class="toolbar">
-      <div class="seg" role="group" aria-label="인식 방식">
-        <button type="button" id="modeAuto" aria-pressed="true">자동 감지</button>
-        <button type="button" id="modeRoi" aria-pressed="false">영역 판정</button>
-      </div>
-      <label class="field">카메라 <select id="camSel" aria-label="카메라 선택"></select></label>
-      <button class="btn" id="mirrorBtn" type="button" aria-pressed="true">좌우 반전</button>
-      <button class="btn" id="pauseBtn" type="button" aria-pressed="false">일시정지 <span class="kbd">Space</span></button>
-      <button class="btn" id="photoBtn" type="button">사진으로 테스트</button>
-      <input type="file" id="photoFile" accept="image/*" hidden>
-      <label class="field only-roi">판정 영역 <input type="range" id="roiSize" min="30" max="100" value="60"> <span id="roiOut">60%</span></label>
+      <select id="camSel" aria-label="카메라"></select>
+      <select id="resSel" aria-label="해상도"><option value="640">640×480</option><option value="1280" selected>1280×720</option><option value="1920">1920×1080</option></select>
+      <span class="sep"></span>
+      <button class="btn" id="pauseBtn" type="button" aria-pressed="false">일시정지 <kbd>Space</kbd></button>
+      <button class="btn" id="mirrorBtn" type="button" aria-pressed="false">좌우 반전 <kbd>M</kbd></button>
+      <button class="btn" id="zoneBtn" type="button" aria-pressed="true">집기 영역 <kbd>Z</kbd></button>
+      <button class="btn" id="gridBtn" type="button" aria-pressed="false">격자 <kbd>G</kbd></button>
+      <span class="sep"></span>
+      <button class="btn" id="fileBtn" type="button">사진, 영상 열기</button>
+      <input type="file" id="fileIn" accept="image/*,video/*" hidden>
+      <button class="btn" id="capBtn" type="button">프레임 저장 <kbd>S</kbd></button>
     </div>
 
-    <div class="log">
-      <div class="loghead">
-        <h2>감지 기록</h2>
-        <div class="tally" id="tally"></div>
-        <button class="btn" id="clearLog" type="button">기록 비우기</button>
+    <div class="bottom">
+      <div class="pane">
+        <div class="phead"><h2>감지 이벤트</h2><span id="evCount">0건</span><button class="btn" id="evCsv" type="button">CSV</button><button class="btn" id="evClear" type="button">비우기</button></div>
+        <div class="events" id="events"><span class="empty">목표가 정해진 프레임 수만큼 이어지면 캡처가 남습니다.</span></div>
       </div>
-      <div class="strip" id="strip"><span class="empty">꽁초가 안정적으로 잡히면 여기에 캡처가 남습니다.</span></div>
+      <div class="pane">
+        <div class="phead"><h2>로봇 콘솔</h2><span id="txRate">송신 꺼짐</span><button class="btn" id="conClear" type="button">비우기</button></div>
+        <pre class="console" id="console" aria-live="off"></pre>
+        <form class="sendrow" id="sendForm"><input id="sendIn" placeholder="직접 보낼 명령 (예: HOME)" aria-label="직접 보낼 명령" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
+      </div>
     </div>
   </section>
 
   <aside class="side">
-    <section class="result" aria-live="polite">
-      <div class="verdict"><span id="vName">대기</span><span id="vConf"></span></div>
-      <div id="bars"></div>
-      <p class="note" id="vNote"></p>
-    </section>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t-det" aria-selected="true" aria-controls="p-det">감지</button>
+      <button role="tab" id="t-bot" aria-selected="false" aria-controls="p-bot">로봇</button>
+      <button role="tab" id="t-data" aria-selected="false" aria-controls="p-data">데이터셋</button>
+      <button role="tab" id="t-sub" aria-selected="false" aria-controls="p-sub">종류</button>
+    </div>
 
-    <section>
-      <h2>종류 학습 <span class="only-auto" style="font-weight:400;color:var(--mute)">(선택)</span></h2>
-      <p class="hint only-auto">꽁초 감지는 학습 없이 바로 됩니다. 일반, 얇은, 전자담배 스틱까지 나누려면 꽁초를 비춘 채 해당 버튼을 누르고 있으세요. 감지된 박스 안이 샘플로 쌓이고, 두 종류 이상 모이면 박스에 종류가 붙습니다.</p>
-      <p class="hint only-roi">버튼을 누르고 있는 동안 사각형 안 화면이 초당 약 10장씩 쌓입니다. 숫자키로도 됩니다. 두 클래스 이상 모이면 판정을 시작합니다.</p>
-      <div id="classList"></div>
-      <form id="addForm"><input id="addName" maxlength="16" placeholder="새 클래스 이름" aria-label="새 클래스 이름"><button class="btn" type="submit">추가</button></form>
-    </section>
-
-    <section>
-      <h2 style="margin-bottom:10px">판정 설정</h2>
-      <div class="set">
-        <label for="det" class="only-auto">감지 기준 신뢰도</label><input class="only-auto" type="range" id="det" min="10" max="90" value="40"><output class="only-auto" id="detOut">40%</output>
-        <label for="thr">종류 판정 기준</label><input type="range" id="thr" min="40" max="95" value="70"><output id="thrOut">70%</output>
-        <label for="stab">기록까지 연속 프레임</label><input type="range" id="stab" min="2" max="30" value="6"><output id="stabOut">6</output>
-        <label for="kVal">k (이웃 수)</label><input type="range" id="kVal" min="1" max="15" value="5"><output id="kOut">5</output>
-        <label for="smooth" class="only-roi">결과 부드럽게</label><input class="only-roi" type="range" id="smooth" min="0" max="90" value="50"><output class="only-roi" id="smoothOut">50%</output>
+    <div class="panel on" id="p-det" role="tabpanel">
+      <div class="readout" aria-live="polite">
+        <div class="rhead"><span class="rname" id="rName">대기</span><span class="rconf" id="rConf"></span></div>
+        <div class="xy"><div><span>X 오른쪽 +</span><b id="rX">-</b></div><div><span>Y 앞 +</span><b id="rY">-</b></div></div>
+        <div class="dir"><span id="rDir">목표 없음</span><span class="zstate" id="rZone">영역 밖</span></div>
+        <dl class="dl"><dt>화면 좌표</dt><dd id="rPx">-</dd><dt>박스 크기</dt><dd id="rSize">-</dd><dt>연속 프레임</dt><dd id="rStab">0</dd><dt>화면 내 꽁초</dt><dd id="rCount">0</dd></dl>
       </div>
-      <p class="note" id="modelInfo"></p>
-    </section>
-
-    <section>
-      <h2>데이터</h2>
-      <p class="hint" id="saveNote">종류 샘플은 이 브라우저에 자동 저장됩니다.</p>
-      <div class="row">
-        <button class="btn" id="exportBtn" type="button">JSON 내보내기</button>
-        <button class="btn" id="importBtn" type="button">JSON 불러오기</button>
-        <input type="file" id="importFile" accept="application/json,.json" hidden>
-        <button class="btn warn" id="wipeBtn" type="button">전체 샘플 삭제</button>
+      <div class="sec">
+        <h2>감지 목록</h2>
+        <div class="detlist" id="detList"><span class="empty">감지된 꽁초가 없습니다.</span></div>
       </div>
-    </section>
+      <div class="sec">
+        <h2>감지 설정</h2>
+        <div class="form">
+          <label for="conf">신뢰도 기준</label><input type="range" id="conf" min="10" max="90" value="40"><output id="confOut"></output>
+          <label for="iou">겹침 제거 (IoU)</label><input type="range" id="iou" min="20" max="80" value="45"><output id="iouOut"></output>
+          <label for="stab">목표 확정 프레임</label><input type="range" id="stab" min="1" max="30" value="6"><output id="stabOut"></output>
+          <label for="policy">목표 선택</label><select id="policy" class="wide"><option value="near">기준점에 가까운 순</option><option value="conf">신뢰도 높은 순</option><option value="big">큰 순</option></select>
+        </div>
+        <p class="hint" id="modelInfo" style="margin:12px 0 0"></p>
+      </div>
+    </div>
+
+    <div class="panel" id="p-bot" role="tabpanel">
+      <div class="sec">
+        <h2>보정</h2>
+        <p class="hint">카메라가 바닥을 내려다볼 때 화면 가로가 실제로 몇 mm인지 넣으면 목표 좌표가 mm로 나옵니다. 자를 화면 가로로 놓고 재면 됩니다.</p>
+        <div class="form">
+          <label for="fieldMm">화면 가로 실제 폭</label><input type="number" id="fieldMm" min="20" max="5000" value="400" class="wide">
+          <label for="zoneY">기준점 세로 위치</label><input type="range" id="zoneY" min="10" max="95" value="78"><output id="zoneYOut"></output>
+          <label for="zoneW">집기 영역 너비</label><input type="range" id="zoneW" min="5" max="80" value="22"><output id="zoneWOut"></output>
+          <label for="zoneH">집기 영역 높이</label><input type="range" id="zoneH" min="5" max="60" value="16"><output id="zoneHOut"></output>
+        </div>
+        <p class="hint" style="margin:10px 0 0">좌표 원점은 집기 영역 가운데(시안 십자)입니다. 집게가 실제로 닿는 바닥 위치에 맞추세요.</p>
+      </div>
+      <div class="sec">
+        <h2>연결</h2>
+        <p class="hint">시리얼은 USB로 꽂은 ESP32, 아두이노에 바로 보냅니다(크롬, 엣지). WebSocket은 라즈베리파이 같은 기기의 서버로 보냅니다.</p>
+        <div class="form">
+          <label for="baud">시리얼 속도</label><select id="baud" class="wide"><option>9600</option><option>57600</option><option selected>115200</option><option>230400</option><option>921600</option></select>
+        </div>
+        <div class="row" style="margin:8px 0 12px"><button class="btn" id="serialBtn" type="button">시리얼 연결</button></div>
+        <div class="form">
+          <label for="wsUrl">WebSocket 주소</label><input type="url" id="wsUrl" class="wide" placeholder="ws://192.168.0.10:8765">
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="wsBtn" type="button">WebSocket 연결</button></div>
+      </div>
+      <div class="sec">
+        <h2>송신</h2>
+        <div class="form">
+          <label for="rate">보내는 주기</label><select id="rate" class="wide"><option value="0">보내지 않음</option><option value="2">초당 2번</option><option value="5" selected>초당 5번</option><option value="10">초당 10번</option><option value="20">초당 20번</option></select>
+          <label for="fmt">형식</label><select id="fmt" class="wide"><option value="csv">CSV 한 줄</option><option value="json">JSON 한 줄</option></select>
+          <label for="onlyT">목표 있을 때만</label><select id="onlyT" class="wide"><option value="0">항상 보냄</option><option value="1" selected>목표 있을 때만</option></select>
+        </div>
+        <p class="hint" style="margin:10px 0 6px">CSV는 <code>T,X,Y,신뢰도,영역안,개수</code> (mm, 영역안은 1/0), 목표가 없으면 <code>N,개수</code>. 줄 끝은 \n.</p>
+        <p class="hint" style="margin:0" id="fmtSample"></p>
+      </div>
+    </div>
+
+    <div class="panel" id="p-data" role="tabpanel">
+      <div class="sec">
+        <h2>국내 데이터 모으기</h2>
+        <p class="hint">지금 모델은 해외 캠퍼스 사진으로 학습했습니다. 학교 주변 바닥, 에쎄, 아이코스 스틱을 찍어 모으면 다시 학습할 때 정확도가 올라갑니다. 저장하면 현재 감지 박스가 YOLO 라벨로 같이 저장되니, 내보낸 뒤 라벨링 도구에서 틀린 박스만 고치면 됩니다.</p>
+        <div class="stat"><span>이미지 <b id="dsN">0</b></span><span>박스 <b id="dsB">0</b></span><span>빈 화면 <b id="dsE">0</b></span></div>
+        <div class="form">
+          <label for="autoCap">자동 저장</label><select id="autoCap" class="wide"><option value="0">끔</option><option value="1">1초마다</option><option value="2">2초마다</option><option value="5">5초마다</option></select>
+          <label for="capWhen">저장 조건</label><select id="capWhen" class="wide"><option value="hit">꽁초가 있을 때</option><option value="all">항상 (빈 바닥 포함)</option><option value="low">애매할 때 (신뢰도 25~60%)</option></select>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="capBtn2" type="button">지금 저장</button>
+          <button class="btn pri" id="dsZip" type="button">ZIP 내보내기</button>
+          <button class="btn danger" id="dsClear" type="button">모두 삭제</button>
+        </div>
+        <p class="hint" id="dsNote" style="margin:10px 0 0"></p>
+        <div class="grid" id="dsGrid"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-sub" role="tabpanel">
+      <div class="sec">
+        <h2>종류 학습</h2>
+        <p class="hint">감지 모델은 꽁초인지만 압니다. 일반, 얇은, 전자담배 스틱을 나누려면 꽁초를 비춘 채 버튼(숫자키 1~3)을 누르고 있으세요. 목표 박스 안이 샘플로 쌓이고, 두 종류 이상 모이면 박스에 종류가 붙습니다. 종류마다 30장 이상, 각도와 바닥을 바꿔가며 모으세요.</p>
+        <div id="classList"></div>
+        <form id="addForm"><input type="text" id="addName" maxlength="16" placeholder="새 종류 이름" aria-label="새 종류 이름"><button class="btn" type="submit">추가</button></form>
+      </div>
+      <div class="sec">
+        <div class="form">
+          <label for="thr">종류 판정 기준</label><input type="range" id="thr" min="40" max="95" value="70"><output id="thrOut"></output>
+          <label for="kVal">k (이웃 수)</label><input type="range" id="kVal" min="1" max="15" value="5"><output id="kOut"></output>
+        </div>
+        <p class="hint" id="subNote" style="margin:12px 0 10px">샘플은 이 브라우저에 저장됩니다.</p>
+        <div class="row">
+          <button class="btn" id="exportBtn" type="button">샘플 내보내기</button>
+          <button class="btn" id="importBtn" type="button">샘플 불러오기</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+          <button class="btn danger" id="wipeBtn" type="button">샘플 삭제</button>
+        </div>
+      </div>
+    </div>
   </aside>
 </main>
 
+<div class="help" id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div>
+    <h2 id="helpTitle">단축키</h2>
+    <dl>
+      <dt><kbd>Space</kbd></dt><dd>일시정지, 재개</dd>
+      <dt><kbd>S</kbd></dt><dd>현재 프레임을 데이터셋에 저장</dd>
+      <dt><kbd>Z</kbd></dt><dd>집기 영역 표시</dd>
+      <dt><kbd>G</kbd></dt><dd>격자 표시</dd>
+      <dt><kbd>M</kbd></dt><dd>좌우 반전 (화면만, 좌표는 원본 기준)</dd>
+      <dt><kbd>1</kbd>~<kbd>9</kbd></dt><dd>누르고 있는 동안 해당 종류 샘플 수집</dd>
+      <dt><kbd>Esc</kbd></dt><dd>이 창 닫기</dd>
+    </dl>
+    <div class="row" style="margin-top:14px"><button class="btn" id="helpClose" type="button">닫기</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6/dist/knn-classifier.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 {
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const STORE = 'kkongjup-vision-v1';
-const EXTRA = ['#8e5ba8','#b04a4a','#5e7f2e','#a06a8a','#4f5fa8'];
-const BUTT = '#e8a04a';
+const KEY = 'ggongcam-v3', SUBKEY = 'kkongjup-vision-v1';
+const TGT = '#f2a541', ZONE = '#4cc3d9', BOX = '#e4e8eb';
+const EXTRA = ['#b58be0','#e07a7a','#9fc35a','#e0a0c8','#8e9ce8'];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-let classes = [
-  {id:'bg', name:'배경', desc:'꽁초 없는 바닥, 손, 낙엽, 이물질 (영역 판정용)', color:'var(--c-bg)'},
-  {id:'regular', name:'일반 꽁초', desc:'레종, 던힐, 말보로 등 지름 약 7.8mm', color:'var(--c-regular)'},
-  {id:'slim', name:'얇은 꽁초', desc:'에쎄 등 슬림, 슈퍼슬림 지름 약 5.4mm', color:'var(--c-slim)'},
-  {id:'heets', name:'전자담배 스틱', desc:'아이코스 테리아, 센티아, 릴 전용 스틱 등', color:'var(--c-heets)'}
-];
-const counts = {}, thumbs = {}, tally = {};
-let net = null, knn = null, stream = null, det = null, detInfo = null, detState = 'loading';
-let mode = 'auto', paused = false, collecting = null, lastAdd = 0, busy = false;
-let ema = {}, streak = 0, streakLabel = null, loggedLabel = null;
-let photo = null, lastBoxes = [];
+/* ---------- settings ---------- */
+const SET_IDS = ['conf','iou','stab','policy','fieldMm','zoneY','zoneW','zoneH','baud','wsUrl','rate','fmt','onlyT','autoCap','capWhen','thr','kVal','resSel'];
+function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; if(s.mirror) $('#view').classList.add('mirror'); if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
+function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirror = $('#view').classList.contains('mirror'); s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
+const on = sel => $(sel).getAttribute('aria-pressed') === 'true';
+const num = id => +$('#'+id).value;
+const OUTS = {conf:v=>v+'%', iou:v=>v+'%', stab:v=>v, zoneY:v=>v+'%', zoneW:v=>v+'%', zoneH:v=>v+'%', thr:v=>v+'%', kVal:v=>v};
+function paintOutputs(){ for(const id in OUTS){ const o = $('#'+id+'Out'); if(o) o.textContent = OUTS[id]($('#'+id).value); } }
+
+/* ---------- state ---------- */
+const view = $('#view'), video = $('#video'), still = $('#still'), ov = $('#ov'), octx = ov.getContext('2d');
+let stream = null, srcKind = 'cam', fileUrl = null, paused = false, busy = false;
+let det = null, detInfo = null, detState = 'loading';
+let boxes = [], target = null, streak = 0, streakKey = null, logged = false;
 let frames = 0, fpsT = performance.now();
-const crop = document.createElement('canvas'); crop.width = crop.height = 224;
-const cctx = crop.getContext('2d', {willReadFrequently:true});
-const lb = document.createElement('canvas'); const lctx = lb.getContext('2d', {willReadFrequently:true});
-const video = $('#video'), view = $('#view'), roi = $('#roi'), ov = $('#ov'), still = $('#still');
-const octx = ov.getContext('2d');
+const lb = document.createElement('canvas'), lctx = lb.getContext('2d', {willReadFrequently:true});
+const crop = document.createElement('canvas'); crop.width = crop.height = 224; const cctx = crop.getContext('2d', {willReadFrequently:true});
 
-const cfg = () => ({det:+$('#det').value/100, thr:+$('#thr').value/100, stab:+$('#stab').value, k:+$('#kVal').value, sm:+$('#smooth').value/100, roi:+$('#roiSize').value/100});
-const cls = id => classes.find(c => c.id === id);
-const colorOf = id => { const c = cls(id); if(!c) return BUTT; return c.color.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(c.color.slice(4,-1)).trim() : c.color; };
-const total = () => Object.values(counts).reduce((a,b)=>a+b,0);
-const subs = () => classes.filter(c => c.id !== 'bg');
-const ready = () => classes.filter(c => counts[c.id] > 0).length >= 2;
-const subReady = () => subs().filter(c => counts[c.id] > 0).length >= 2;
-
-function setStatus(t, kind){const s=$('#status');s.textContent=t;s.className='status'+(kind?' '+kind:'')}
-function showMsg(t){$('#msgText').textContent=t;$('#msg').classList.toggle('on',!!t)}
-
-/* ---------- source geometry ---------- */
-function src(){ return photo ? {el:still, w:still.width, h:still.height, fit:'contain', mirror:false}
-                            : {el:video, w:video.videoWidth, h:video.videoHeight, fit:'cover', mirror:view.classList.contains('mirror')}; }
-function fit(s){
-  const r = view.getBoundingClientRect();
-  const k = s.fit==='cover' ? Math.max(r.width/s.w, r.height/s.h) : Math.min(r.width/s.w, r.height/s.h);
-  return {k, dx:(r.width - s.w*k)/2, dy:(r.height - s.h*k)/2, W:r.width, H:r.height};
+function src(){
+  if(srcKind==='photo') return {el:still, w:still.width, h:still.height};
+  return {el:video, w:video.videoWidth, h:video.videoHeight};
 }
-
-/* ---------- UI rendering ---------- */
-function renderClasses(){
-  const list = mode==='auto' ? subs() : classes;
-  $('#classList').innerHTML = list.map(c => { const i = classes.indexOf(c); return `
-    <div class="cls" style="--k:${c.color}">
-      <div class="sw"></div>
-      <div class="tx"><b>${esc(c.name)}</b>${i<9?`<span class="kbd">${i+1}</span>`:''}<small>${esc(c.desc||'')}</small></div>
-      <div class="act">
-        <button class="hold" type="button" data-id="${c.id}">수집<span class="n">${counts[c.id]||0}</span></button>
-        <button class="mini" type="button" data-reset="${c.id}" aria-label="${esc(c.name)} 샘플 초기화">비움</button>
-        ${c.custom?`<button class="mini" type="button" data-del="${c.id}" aria-label="${esc(c.name)} 클래스 삭제">삭제</button>`:''}
-      </div>
-      ${(thumbs[c.id]||[]).length?`<div class="thumbs">${thumbs[c.id].map(u=>`<img src="${u}" alt="">`).join('')}</div>`:''}
-    </div>`; }).join('');
-  if(mode==='roi') $('#bars').innerHTML = classes.map(c => `
-    <div class="bar" style="--k:${c.color}" data-bar="${c.id}"><span class="nm">${esc(c.name)}</span><div class="tr"><div></div></div><em>0%</em></div>`).join('');
-  renderTally();
-}
-function updateCount(id){ const b = document.querySelector(`.hold[data-id="${id}"] .n`); if(b) b.textContent = counts[id]||0; }
-function renderTally(){
-  const items = [{id:'butt', name:'꽁초', color:BUTT}, ...subs()];
-  $('#tally').innerHTML = items.filter(c=>c.id!=='butt'||mode==='auto').map(c=>`<span><i class="dot" style="background:${c.color}"></i>${esc(c.name)} <b>${tally[c.id]||0}</b></span>`).join('');
-}
-
-/* ---------- ROI ---------- */
-function layoutRoi(){
-  const r = view.getBoundingClientRect();
-  roi.style.setProperty('--s', Math.round(Math.min(r.width, r.height) * cfg().roi) + 'px');
-  $('#roiOut').textContent = Math.round(cfg().roi*100) + '%';
-  ov.width = Math.round(r.width * devicePixelRatio); ov.height = Math.round(r.height * devicePixelRatio);
-  if(photo) drawStill();
-}
-function grabRoi(){
-  const s = src(); if(!s.w) return false;
-  const f = fit(s); const side = Math.min(f.W, f.H) * cfg().roi / f.k;
-  cctx.drawImage(s.el, (s.w-side)/2, (s.h-side)/2, side, side, 0, 0, 224, 224);
-  return true;
-}
-function grabBox(b){
-  const s = src(); const side = Math.max(b.w, b.h) * 1.35;
-  cctx.fillStyle = '#777'; cctx.fillRect(0,0,224,224);
-  cctx.drawImage(s.el, b.x + b.w/2 - side/2, b.y + b.h/2 - side/2, side, side, 0, 0, 224, 224);
-}
-function snap(size, mirror){
-  const c = document.createElement('canvas'); c.width = c.height = size;
-  const x = c.getContext('2d');
-  if(mirror){x.translate(size,0);x.scale(-1,1)}
-  x.drawImage(crop,0,0,size,size); return c.toDataURL('image/jpeg',.75);
-}
+function fit(s){ const r = view.getBoundingClientRect(); const k = Math.min(r.width/s.w, r.height/s.h); return {k, dx:(r.width-s.w*k)/2, dy:(r.height-s.h*k)/2, W:r.width, H:r.height}; }
+function zoneRect(s){ const w = s.w*num('zoneW')/100, h = s.h*num('zoneH')/100, cx = s.w/2, cy = s.h*num('zoneY')/100; return {x:cx-w/2, y:cy-h/2, w, h, cx, cy}; }
+const mmPerPx = s => num('fieldMm') / (s.w || 1);
+function setChip(id, label, val, kind){ const c = $('#'+id); c.className = 'chip' + (kind?' '+kind:'') + (c.classList.contains('hide-s')?' hide-s':''); c.innerHTML = esc(label)+' <b>'+esc(val)+'</b>'; }
+function banner(t){ const b = $('#banner'); b.textContent = t||''; b.classList.toggle('on', !!t); }
+function showMsg(t){ $('#msgText').textContent = t; $('#msg').classList.toggle('on', !!t); }
 
 /* ---------- detector ---------- */
 async function loadDetector(){
+  if(typeof ort==='undefined'){ detState='error'; setChip('chipModel','감지 모델','라이브러리 실패','err'); return; }
   try{
     const r = await fetch('models/butt.json', {cache:'no-cache'});
     if(!r.ok) throw new Error('pending');
@@ -313,353 +393,424 @@ async function loadDetector(){
     ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
     ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency||2) : 1;
     det = await ort.InferenceSession.create('models/' + (detInfo.file||'butt.onnx'), {executionProviders:['wasm'], graphOptimizationLevel:'all'});
-    lb.width = lb.height = detInfo.imgsz;
-    detState = 'ok';
-    const t = detInfo.test||{};
-    $('#modelInfo').textContent = `감지 모델 ${detInfo.base||''}, 입력 ${detInfo.imgsz}px, 테스트 정밀도 ${Math.round((t.precision||0)*100)}%, 재현율 ${Math.round((t.recall||0)*100)}%, mAP50 ${Math.round((t.map50||0)*100)}%. 학습 데이터: ${detInfo.dataset||''}.`;
+    lb.width = lb.height = detInfo.imgsz; detState = 'ok';
+    const t = detInfo.test||{}, p = v => Math.round((v||0)*100)+'%';
+    setChip('chipModel','감지 모델', (detInfo.base||'yolo')+' '+detInfo.imgsz+'px', 'ok');
+    $('#modelInfo').textContent = `테스트셋 기준 정밀도 ${p(t.precision)}, 재현율 ${p(t.recall)}, mAP50 ${p(t.map50)}. 학습 데이터 ${detInfo.dataset||''}${detInfo.trained_at?', 학습 '+detInfo.trained_at:''}.`;
+    banner('');
   }catch(e){
-    detState = e.message==='pending' ? 'pending' : 'error';
-    if(detState==='error') console.error(e);
-    $('#modelInfo').textContent = detState==='pending' ? '자동 감지 모델이 아직 배포되지 않았습니다. 학습이 끝나면 자동으로 올라오고, 새로고침하면 켜집니다.' : '자동 감지 모델을 불러오지 못했습니다. 새로고침해 보세요.';
+    detState = e.message==='pending' ? 'pending' : 'error'; if(detState==='error') console.error(e);
+    setChip('chipModel','감지 모델', detState==='pending'?'학습 중':'로드 실패', detState==='pending'?'warn':'err');
+    const t = detState==='pending' ? '감지 모델을 학습하는 중입니다. 학습이 끝나 배포되면 새로고침하세요.' : '감지 모델을 불러오지 못했습니다. 새로고침해 보세요.';
+    $('#modelInfo').textContent = t; banner(t);
   }
-  refreshStatus();
 }
 function iou(a,b){const x1=Math.max(a.x,b.x),y1=Math.max(a.y,b.y),x2=Math.min(a.x+a.w,b.x+b.w),y2=Math.min(a.y+a.h,b.y+b.h);const i=Math.max(0,x2-x1)*Math.max(0,y2-y1);return i/(a.w*a.h+b.w*b.h-i+1e-6)}
-async function detect(){
-  const s = src(); const S = detInfo.imgsz;
-  const r = Math.min(S/s.w, S/s.h), nw = Math.round(s.w*r), nh = Math.round(s.h*r), px = (S-nw)/2, py = (S-nh)/2;
+async function detect(s, th){
+  const S = detInfo.imgsz, r = Math.min(S/s.w, S/s.h), nw = Math.round(s.w*r), nh = Math.round(s.h*r), px = (S-nw)/2, py = (S-nh)/2;
   lctx.fillStyle = 'rgb(114,114,114)'; lctx.fillRect(0,0,S,S);
   lctx.drawImage(s.el, 0, 0, s.w, s.h, px, py, nw, nh);
   const d = lctx.getImageData(0,0,S,S).data, n = S*S, f = new Float32Array(3*n);
   for(let i=0;i<n;i++){ f[i]=d[i*4]/255; f[n+i]=d[i*4+1]/255; f[2*n+i]=d[i*4+2]/255; }
   const out = await det.run({[det.inputNames[0]]: new ort.Tensor('float32', f, [1,3,S,S])});
-  const o = out[det.outputNames[0]], N = o.dims[2], a = o.data, th = cfg().det;
-  const c = [];
-  for(let i=0;i<N;i++){ const sc = a[4*N+i]; if(sc < th) continue;
-    const w=a[2*N+i], h=a[3*N+i];
-    c.push({x:(a[i]-w/2-px)/r, y:(a[N+i]-h/2-py)/r, w:w/r, h:h/r, score:sc}); }
+  const o = out[det.outputNames[0]], N = o.dims[2], a = o.data, c = [];
+  for(let i=0;i<N;i++){ const sc = a[4*N+i]; if(sc < th) continue; const w=a[2*N+i], h=a[3*N+i];
+    const x = Math.max(0,(a[i]-w/2-px)/r), y = Math.max(0,(a[N+i]-h/2-py)/r);
+    c.push({x, y, w:Math.min(w/r, s.w-x), h:Math.min(h/r, s.h-y), score:sc}); }
   c.sort((p,q)=>q.score-p.score);
-  const keep = [];
-  for(const b of c){ if(keep.every(k=>iou(k,b)<0.45)) keep.push(b); if(keep.length>=20) break; }
+  const keep = [], it = num('iou')/100;
+  for(const b of c){ if(keep.every(k=>iou(k,b)<it)) keep.push(b); if(keep.length>=30) break; }
   return keep;
 }
 
+/* ---------- target + telemetry ---------- */
+function pickTarget(s, list){
+  if(!list.length) return null;
+  const z = zoneRect(s), pol = $('#policy').value;
+  const key = pol==='conf' ? b=>-b.score : pol==='big' ? b=>-(b.w*b.h) : b=>Math.hypot(b.x+b.w/2-z.cx, b.y+b.h/2-z.cy);
+  return list.reduce((a,b)=>key(b)<key(a)?b:a);
+}
+function telemetry(s, b){
+  const z = zoneRect(s), k = mmPerPx(s), cx = b.x+b.w/2, cy = b.y+b.h/2;
+  return {cx, cy, dx:(cx-z.cx)*k, dy:(z.cy-cy)*k, inZone: cx>=z.x && cx<=z.x+z.w && cy>=z.y && cy<=z.y+z.h, wmm:b.w*k, hmm:b.h*k};
+}
+const sgn = v => { const r = Math.round(v); return r===0 ? '0' : (r>0?'+':'−') + Math.abs(r); };
+function paintReadout(s){
+  $('#rCount').textContent = boxes.length; $('#rStab').textContent = target ? streak : 0;
+  if(!target){
+    $('#rName').textContent = detState==='ok' ? '목표 없음' : '대기'; $('#rName').style.color = 'var(--mute)';
+    $('#rConf').textContent = ''; $('#rX').textContent = '-'; $('#rY').textContent = '-';
+    $('#rDir').textContent = detState==='ok' ? '화면에 꽁초가 없습니다' : '감지 모델 준비 전';
+    $('#rZone').textContent = '영역 밖'; $('#rZone').className = 'zstate'; $('#rPx').textContent = '-'; $('#rSize').textContent = '-';
+  }else{
+    const t = target.t, sub = target.sub && subCls(target.sub);
+    $('#rName').textContent = sub ? sub.name : '꽁초'; $('#rName').style.color = TGT;
+    $('#rConf').textContent = '감지 '+Math.round(target.score*100)+'%' + (sub ? ', 종류 '+Math.round(target.subConf*100)+'%' : '');
+    $('#rX').textContent = sgn(t.dx)+' mm'; $('#rY').textContent = sgn(t.dy)+' mm';
+    $('#rDir').textContent = t.inZone ? '집기 가능 위치' : [t.dx>3?'오른쪽 '+Math.round(t.dx)+'mm':t.dx<-3?'왼쪽 '+Math.round(-t.dx)+'mm':'', t.dy>3?'앞 '+Math.round(t.dy)+'mm':t.dy<-3?'뒤 '+Math.round(-t.dy)+'mm':''].filter(Boolean).join(', ') + ' 이동';
+    $('#rZone').textContent = t.inZone ? '영역 안' : '영역 밖'; $('#rZone').className = 'zstate' + (t.inZone?' in':'');
+    $('#rPx').textContent = Math.round(t.cx)+', '+Math.round(t.cy)+' px';
+    $('#rSize').textContent = Math.round(t.wmm)+' × '+Math.round(t.hmm)+' mm';
+  }
+  $('#detList').innerHTML = boxes.length ? boxes.slice(0,12).map(b=>{ const sub = b.sub && subCls(b.sub); const tt = telemetry(s,b);
+    return `<div class="det${b===target?' t':''}" style="--k:${b===target?TGT:(sub?sub.color:BOX)}"><i></i><span>${esc(sub?sub.name:'꽁초')}${b===target?' (목표)':''}</span><span class="mm">${sgn(tt.dx)}, ${sgn(tt.dy)} mm</span><span>${Math.round(b.score*100)}%</span></div>`; }).join('')
+    : '<span class="empty">감지된 꽁초가 없습니다.</span>';
+}
+
 /* ---------- overlay ---------- */
-function drawBoxes(boxes){
-  const dpr = devicePixelRatio; octx.setTransform(dpr,0,0,dpr,0,0);
-  const s = src(), f = fit(s);
-  octx.clearRect(0,0,f.W,f.H);
-  octx.font = '600 14px "IBM Plex Sans KR",system-ui,sans-serif'; octx.textBaseline = 'bottom';
-  for(const b of boxes){
-    let x = f.dx + b.x*f.k, y = f.dy + b.y*f.k; const w = b.w*f.k, h = b.h*f.k;
-    if(s.mirror) x = f.W - x - w;
-    const col = b.sub ? colorOf(b.sub) : BUTT;
-    octx.lineWidth = 3; octx.strokeStyle = col; octx.strokeRect(x, y, w, h);
-    const label = (b.sub ? cls(b.sub).name : '꽁초') + ' ' + Math.round((b.sub ? b.subConf : b.score)*100) + '%';
-    const tw = octx.measureText(label).width + 12, ty = y > 24 ? y : y + h + 24;
-    octx.fillStyle = col; octx.fillRect(x - 1.5, ty - 22, tw, 22);
-    octx.fillStyle = '#fff'; octx.fillText(label, x + 4.5, ty - 4);
+function draw(s){
+  const dpr = devicePixelRatio, f = fit(s), mir = view.classList.contains('mirror') && srcKind!=='photo';
+  if(ov.width !== Math.round(f.W*dpr) || ov.height !== Math.round(f.H*dpr)){ ov.width = Math.round(f.W*dpr); ov.height = Math.round(f.H*dpr); }
+  octx.setTransform(dpr,0,0,dpr,0,0); octx.clearRect(0,0,f.W,f.H);
+  const X = x => { const v = f.dx + x*f.k; return mir ? f.W - v : v; }, Y = y => f.dy + y*f.k;
+  const R = b => { let x = X(b.x), w = b.w*f.k; if(mir) x -= w; return [x, Y(b.y), w, b.h*f.k]; };
+  octx.lineWidth = 1;
+  if(on('#gridBtn')){ octx.strokeStyle = 'rgba(228,232,235,.14)';
+    for(let i=1;i<4;i++){ const gx = f.dx + s.w*f.k*i/4, gy = f.dy + s.h*f.k*i/4; octx.beginPath(); octx.moveTo(gx,f.dy); octx.lineTo(gx,f.dy+s.h*f.k); octx.moveTo(f.dx,gy); octx.lineTo(f.dx+s.w*f.k,gy); octx.stroke(); } }
+  const z = zoneRect(s), zx = X(z.cx), zy = Y(z.cy);
+  if(on('#zoneBtn')){
+    const [x,y,w,h] = R(z); octx.setLineDash([6,5]); octx.strokeStyle = ZONE; octx.lineWidth = 1.5; octx.strokeRect(x,y,w,h); octx.setLineDash([]);
+    octx.beginPath(); octx.moveTo(zx-9,zy); octx.lineTo(zx+9,zy); octx.moveTo(zx,zy-9); octx.lineTo(zx,zy+9); octx.stroke();
+  }
+  octx.font = '500 12px "IBM Plex Sans KR",system-ui,sans-serif'; octx.textBaseline = 'middle';
+  for(const b of boxes){ if(b===target) continue; const sub = b.sub && subCls(b.sub); const [x,y,w,h] = R(b);
+    octx.strokeStyle = sub ? sub.color : BOX; octx.lineWidth = 1.5; octx.strokeRect(x,y,w,h);
+    tag(x, y, (sub?sub.name:'꽁초')+' '+Math.round(b.score*100)+'%', sub ? sub.color : 'rgba(228,232,235,.9)', '#14181c'); }
+  if(target){ const [x,y,w,h] = R(target), t = target.t, c = 10;
+    octx.strokeStyle = TGT; octx.lineWidth = 2.5;
+    for(const [px,py,sx,sy] of [[x,y,1,1],[x+w,y,-1,1],[x,y+h,1,-1],[x+w,y+h,-1,-1]]){ octx.beginPath(); octx.moveTo(px+sx*c,py); octx.lineTo(px,py); octx.lineTo(px,py+sy*c); octx.stroke(); }
+    const tx = x+w/2, ty = y+h/2;
+    if(on('#zoneBtn')){ octx.lineWidth = 1.5; octx.setLineDash([3,4]); octx.beginPath(); octx.moveTo(zx,zy); octx.lineTo(tx,ty); octx.stroke(); octx.setLineDash([]);
+      const mx = (zx+tx)/2, my = (zy+ty)/2; tag(mx+8, my, sgn(t.dx)+', '+sgn(t.dy)+' mm', 'rgba(20,24,28,.9)', TGT, true); }
+    octx.fillStyle = TGT; octx.beginPath(); octx.arc(tx,ty,3,0,7); octx.fill();
+    const sub = target.sub && subCls(target.sub);
+    tag(x, y, '목표 '+(sub?sub.name:'꽁초')+' '+Math.round(target.score*100)+'%', TGT, '#14181c');
   }
 }
-function clearBoxes(){ octx.setTransform(1,0,0,1,0,0); octx.clearRect(0,0,ov.width,ov.height); }
+function tag(x, y, text, bg, fg, mid){
+  const w = octx.measureText(text).width + 10, h = 19, ty = mid ? y - h/2 : (y > h+2 ? y - h - 2 : y + 2);
+  octx.fillStyle = bg; octx.fillRect(x, ty, w, h); octx.fillStyle = fg; octx.fillText(text, x+5, ty + h/2 + 1);
+}
 
-/* ---------- camera / photo ---------- */
-async function listCams(selected){
-  try{
-    const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
-    $('#camSel').innerHTML = devs.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'카메라 '+(i+1))}</option>`).join('');
-    if(selected) $('#camSel').value = selected;
-  }catch(e){}
+/* ---------- source: camera / file ---------- */
+async function listCams(sel){
+  try{ const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+    $('#camSel').innerHTML = devs.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'카메라 '+(i+1))}</option>`).join('') || '<option value="">카메라 없음</option>';
+    if(sel) $('#camSel').value = sel; }catch(_){}
 }
 async function startCam(deviceId){
+  stopFile();
   if(stream) stream.getTracks().forEach(t=>t.stop());
-  if(!navigator.mediaDevices?.getUserMedia){showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬으로 열거나 사진으로 테스트하세요.');return}
+  if(!navigator.mediaDevices?.getUserMedia){ showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬이나 엣지로 열거나 파일로 테스트하세요.'); return; }
+  const w = num('resSel'), h = w===640 ? 480 : w===1280 ? 720 : 1080;
   try{
-    stream = await navigator.mediaDevices.getUserMedia({audio:false, video: deviceId ? {deviceId:{exact:deviceId}, width:{ideal:1280}, height:{ideal:720}} : {width:{ideal:1280}, height:{ideal:720}, facingMode:'environment'}});
-    video.srcObject = stream; await video.play(); showMsg('');
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video: Object.assign({width:{ideal:w}, height:{ideal:h}}, deviceId ? {deviceId:{exact:deviceId}} : {facingMode:'environment'})});
+    video.srcObject = stream; await video.play(); showMsg(''); srcKind = 'cam';
     await listCams(stream.getVideoTracks()[0].getSettings().deviceId);
-    video.onloadedmetadata = layoutRoi; layoutRoi();
+    $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
+    video.onloadedmetadata = () => $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
   }catch(e){
-    showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요. 사진으로 테스트할 수도 있습니다.'
-      : e.name==='NotFoundError' ? '연결된 카메라를 찾지 못했습니다. 웹캠을 꽂고 다시 연결하거나 사진으로 테스트하세요.'
-      : e.name==='NotReadableError' ? '다른 프로그램이 카메라를 쓰고 있습니다. 해당 프로그램을 닫고 다시 연결하세요.'
+    showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요.'
+      : e.name==='NotFoundError' ? '연결된 카메라가 없습니다. 웹캠을 꽂고 다시 연결하거나 파일로 테스트하세요.'
+      : e.name==='NotReadableError' ? '다른 프로그램이 카메라를 쓰고 있습니다. 그 프로그램을 닫고 다시 연결하세요.'
       : '카메라를 열지 못했습니다. ('+e.name+')');
   }
 }
-function drawStill(){
-  if(!photo) return;
-  const r = view.getBoundingClientRect();
-  still.width = photo.width; still.height = photo.height;
-  still.getContext('2d').drawImage(photo, 0, 0);
-  still.style.objectFit = 'contain';
-}
-async function openPhoto(file){
+function stopFile(){ if(fileUrl){ URL.revokeObjectURL(fileUrl); fileUrl = null; } view.classList.remove('photo'); video.removeAttribute('src'); $('#fileBtn').textContent = '사진, 영상 열기'; }
+async function openFile(file){
   try{
-    photo = await createImageBitmap(file);
-    view.classList.add('photo'); showMsg(''); drawStill(); layoutRoi(); loggedLabel = null;
-    $('#photoBtn').textContent = '카메라로 돌아가기';
-  }catch(e){ $('#vNote').textContent = '이미지를 열지 못했습니다. JPG나 PNG 파일인지 확인하세요.'; }
-}
-function closePhoto(){ photo = null; view.classList.remove('photo'); $('#photoBtn').textContent = '사진으로 테스트'; clearBoxes(); if(!stream) startCam(); }
-
-/* ---------- collect ---------- */
-async function addSample(id){
-  if(!net) return;
-  if(mode==='auto'){
-    if(!lastBoxes.length) return;
-    grabBox(lastBoxes.reduce((a,b)=>a.w*a.h>b.w*b.h?a:b));
-  }else if(!grabRoi()) return;
-  const emb = tf.tidy(()=>net.infer(crop, true));
-  knn.addExample(emb, id); emb.dispose();
-  counts[id] = (counts[id]||0) + 1; updateCount(id);
-  const t = thumbs[id] = thumbs[id]||[];
-  if(counts[id] % 5 === 1){ t.unshift(snap(68, src().mirror)); if(t.length>6) t.pop(); }
-}
-function startHold(id){
-  if(!cls(id) || (mode==='auto' && id==='bg')) return; collecting = id; roi.classList.add('rec');
-  roi.style.setProperty('--k', cls(id).color);
-  document.querySelector(`.hold[data-id="${id}"]`)?.classList.add('on');
-}
-function stopHold(){
-  if(!collecting) return;
-  document.querySelector(`.hold[data-id="${collecting}"]`)?.classList.remove('on');
-  collecting = null; roi.classList.remove('rec'); renderClasses(); save();
-}
-
-/* ---------- ROI mode verdict ---------- */
-function paintBars(conf){
-  for(const c of classes){
-    const el = document.querySelector(`[data-bar="${c.id}"]`); if(!el) continue;
-    const v = conf[c.id]||0;
-    el.querySelector('.tr div').style.width = (v*100).toFixed(1)+'%';
-    el.querySelector('em').textContent = Math.round(v*100)+'%';
-  }
-}
-function verdict(id, conf){
-  const {thr} = cfg(); const tag = $('#tag'), vn = $('#vName');
-  if(!id){vn.textContent='대기';vn.style.color='';$('#vConf').textContent='';tag.classList.remove('on');roi.style.setProperty('--k','#ffffff');return}
-  const c = cls(id);
-  if(conf < thr){
-    vn.textContent='판정 보류'; vn.style.color='var(--mute)';
-    $('#vConf').textContent=Math.round(conf*100)+'%'; tag.classList.remove('on');
-    if(!collecting) roi.style.setProperty('--k','#ffffff'); return;
-  }
-  vn.textContent=c.name; vn.style.color=id==='bg'?'var(--mute)':c.color;
-  $('#vConf').textContent=Math.round(conf*100)+'%';
-  if(!collecting){
-    roi.style.setProperty('--k', id==='bg' ? '#ffffff' : c.color);
-    tag.textContent = c.name+' '+Math.round(conf*100)+'%';
-    tag.classList.toggle('on', id!=='bg');
-  }
-}
-function track(lab, conf, thumbFn){
-  const {stab} = cfg();
-  if(lab === streakLabel) streak++; else { streakLabel = lab; streak = 1; }
-  if(streak < stab) return;
-  if(lab && lab !== 'bg'){ if(loggedLabel !== lab){ loggedLabel = lab; logHit(lab, conf, thumbFn); } }
-  else loggedLabel = null;
-}
-function logHit(id, conf, thumbFn){
-  const c = id==='butt' ? {name:'꽁초', color:BUTT} : cls(id);
-  tally[id] = (tally[id]||0)+1; renderTally();
-  const strip = $('#strip'); strip.querySelector('.empty')?.remove();
-  const d = document.createElement('div'); d.className='shot'; d.style.setProperty('--k', c.color);
-  const t = new Date().toLocaleTimeString('ko-KR',{hour12:false});
-  d.innerHTML = `<img src="${thumbFn()}" alt="${esc(c.name)} 감지 캡처"><b>${esc(c.name)}</b><span>${t} ${Math.round(conf*100)}%</span>`;
-  strip.prepend(d); while(strip.children.length>40) strip.lastChild.remove();
-  if(mode==='roi'){ roi.classList.remove('hit'); void roi.offsetWidth; roi.classList.add('hit'); }
-}
-
-/* ---------- auto mode ---------- */
-async function autoStep(){
-  const boxes = await detect();
-  const k = Math.min(cfg().k, total());
-  if(subReady() && net){
-    for(const b of boxes.slice(0,4)){
-      grabBox(b);
-      const emb = tf.tidy(()=>net.infer(crop, true));
-      const res = await knn.predictClass(emb, k); emb.dispose();
-      let best=null, bv=0; for(const c of subs()){ const v=res.confidences[c.id]||0; if(v>bv){bv=v;best=c.id} }
-      if(best && bv >= cfg().thr){ b.sub = best; b.subConf = bv; }
+    if(file.type.startsWith('video/')){
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+      stopFile(); fileUrl = URL.createObjectURL(file);
+      video.srcObject = null; video.src = fileUrl; video.loop = true; await video.play(); srcKind = 'file';
+    }else{
+      const bmp = await createImageBitmap(file);
+      still.width = bmp.width; still.height = bmp.height; still.getContext('2d').drawImage(bmp,0,0);
+      view.classList.add('photo'); srcKind = 'photo';
     }
-  }
-  lastBoxes = boxes; drawBoxes(boxes);
-  const vn = $('#vName');
-  if(boxes.length){ vn.textContent = '꽁초 '+boxes.length+'개'; vn.style.color = BUTT; $('#vConf').textContent = '최고 '+Math.round(boxes[0].score*100)+'%'; }
-  else { vn.textContent = '꽁초 없음'; vn.style.color = 'var(--mute)'; $('#vConf').textContent = ''; }
-  $('#bars').innerHTML = boxes.slice(0,6).map((b,i)=>{ const c = b.sub ? cls(b.sub) : null; return `<div class="det" style="--k:${c?c.color:BUTT}"><i></i><span>${esc(c?c.name:'꽁초')}${b.sub?` <em>종류 ${Math.round(b.subConf*100)}%</em>`:''}</span><em>${Math.round(b.score*100)}%</em></div>`; }).join('');
-  $('#vNote').textContent = boxes.length && !subReady() ? '종류까지 나누려면 아래에서 두 종류 이상 샘플을 모으세요.' : '';
-  const top = boxes[0];
-  track(top ? (top.sub || 'butt') : null, top ? top.score : 0, () => { grabBox(top); return snap(96, src().mirror); });
+    showMsg(''); logged = false; streak = 0;
+    $('#srcBadge').textContent = (srcKind==='photo'?'사진 ':'영상 ') + file.name.slice(0,28);
+    $('#fileBtn').textContent = '카메라로 돌아가기';
+  }catch(e){ log('파일을 열지 못했습니다: '+file.name, 'er'); }
 }
 
-/* ---------- ROI mode ---------- */
-async function roiStep(){
-  if(ready() && grabRoi()){
-    const emb = tf.tidy(()=>net.infer(crop, true));
-    const res = await knn.predictClass(emb, Math.min(cfg().k, total())); emb.dispose();
-    const a = 1 - cfg().sm;
-    for(const c of classes){ const v = res.confidences[c.id]||0; ema[c.id] = ema[c.id]==null ? v : ema[c.id]*(1-a) + v*a; }
-    let top = null, best = -1; for(const c of classes){ if((ema[c.id]||0) > best){best = ema[c.id]; top = c.id} }
-    paintBars(ema); verdict(top, best);
-    track(top && best >= cfg().thr ? top : null, best, () => snap(96, src().mirror));
-    $('#vNote').textContent = '';
-  }else{
-    verdict(null); paintBars({});
-    $('#vNote').textContent = '두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다. 배경 클래스부터 채우는 것을 권장합니다.';
+/* ---------- subtype (KNN) ---------- */
+let subs = [
+  {id:'regular', name:'일반 꽁초', desc:'레종, 던힐, 말보로 등 지름 약 7.8mm', color:css('--c-regular')},
+  {id:'slim', name:'얇은 꽁초', desc:'에쎄 등 슬림, 슈퍼슬림 지름 약 5.4mm', color:css('--c-slim')},
+  {id:'heets', name:'전자담배 스틱', desc:'아이코스 테리아, 센티아, 릴 전용 스틱 등', color:css('--c-heets')}
+];
+const counts = {}; let net = null, knn = null, collecting = null, lastAdd = 0;
+const subCls = id => subs.find(c=>c.id===id);
+const subTotal = () => Object.values(counts).reduce((a,b)=>a+b,0);
+const subReady = () => subs.filter(c=>counts[c.id]>0).length >= 2;
+function grabBox(s, b){ const side = Math.max(b.w,b.h)*1.35; cctx.fillStyle='#777'; cctx.fillRect(0,0,224,224); cctx.drawImage(s.el, b.x+b.w/2-side/2, b.y+b.h/2-side/2, side, side, 0, 0, 224, 224); }
+function renderSubs(){
+  $('#classList').innerHTML = subs.map((c,i)=>`
+    <div class="cls" style="--k:${c.color}"><div class="sw"></div>
+      <div><b>${esc(c.name)}</b> <kbd>${i+1}</kbd><small>${esc(c.desc||'')}</small></div>
+      <div class="act"><button class="hold" type="button" data-id="${c.id}">수집<span class="n">${counts[c.id]||0}</span></button>
+      <button class="mini" type="button" data-reset="${c.id}" aria-label="${esc(c.name)} 샘플 비우기">비움</button>
+      ${c.custom?`<button class="mini" type="button" data-del="${c.id}" aria-label="${esc(c.name)} 삭제">삭제</button>`:''}</div>
+    </div>`).join('');
+}
+function startHold(id){ if(!subCls(id)) return; collecting = id; document.querySelector(`.hold[data-id="${id}"]`)?.classList.add('on'); }
+function stopHold(){ if(!collecting) return; document.querySelector(`.hold[data-id="${collecting}"]`)?.classList.remove('on'); collecting = null; renderSubs(); saveSubs(); }
+async function addSample(s){
+  if(!net){ $('#subNote').textContent = '종류 분류 모델을 불러오는 중입니다.'; return; }
+  if(!target){ $('#subNote').textContent = '목표 꽁초가 잡혀야 샘플이 쌓입니다.'; return; }
+  grabBox(s, target); const emb = tf.tidy(()=>net.infer(crop, true)); knn.addExample(emb, collecting); emb.dispose();
+  counts[collecting] = (counts[collecting]||0)+1;
+  const n = document.querySelector(`.hold[data-id="${collecting}"] .n`); if(n) n.textContent = counts[collecting];
+}
+async function classify(s){
+  if(!net || !subReady()) return;
+  const k = Math.min(num('kVal'), subTotal()), th = num('thr')/100;
+  for(const b of boxes.slice(0,4)){
+    grabBox(s, b); const emb = tf.tidy(()=>net.infer(crop, true)); const res = await knn.predictClass(emb, k); emb.dispose();
+    let best = null, bv = 0; for(const c of subs){ const v = res.confidences[c.id]||0; if(v>bv){bv=v;best=c.id} }
+    if(best && bv>=th){ b.sub = best; b.subConf = bv; }
   }
 }
+function b64(f32){let s='',u=new Uint8Array(f32.buffer);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function unb64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Float32Array(u.buffer)}
+function serializeSubs(){ const ds = knn.getClassifierDataset(), data = {}; for(const id in ds){ data[id] = {shape:ds[id].shape, data:b64(ds[id].dataSync())}; }
+  return {version:1, model:'mobilenet_v2_1.0', created:new Date().toISOString(), classes:subs.map(({id,name,desc,color,custom})=>({id,name,desc,color,custom})), data}; }
+function restoreSubs(obj){
+  if(!obj || !obj.data) throw new Error('형식 오류');
+  knn.clearAllClasses(); for(const k in counts) delete counts[k];
+  if(Array.isArray(obj.classes)) subs = obj.classes.filter(c=>c.id!=='bg').map(c=>({id:String(c.id), name:String(c.name), desc:String(c.desc||''), color:/^#[0-9a-f]{3,8}$/i.test(c.color)?c.color:(css('--c-'+c.id)||EXTRA[0]), custom:!!c.custom}));
+  const ds = {}; for(const id in obj.data){ if(id==='bg') continue; const d = obj.data[id]; ds[id] = tf.tensor2d(unb64(d.data), d.shape); counts[id] = d.shape[0]; if(!subCls(id)) subs.push({id, name:id, desc:'', color:EXTRA[subs.length%EXTRA.length], custom:true}); }
+  if(Object.keys(ds).length) knn.setClassifierDataset(ds);
+}
+let subT; function saveSubs(){ clearTimeout(subT); subT = setTimeout(()=>{ try{ localStorage.setItem(SUBKEY, JSON.stringify(serializeSubs())); $('#subNote').textContent = `샘플 ${subTotal()}장이 이 브라우저에 저장되어 있습니다.`; }catch(_){ $('#subNote').textContent = '브라우저 저장 공간이 부족합니다. 샘플을 내보내 보관하세요.'; } }, 400); }
 
+/* ---------- events ---------- */
+const events = [];
+function logEvent(s){
+  const t = target.t, sub = target.sub && subCls(target.sub);
+  grabBox(s, target); const c = document.createElement('canvas'); c.width = c.height = 92; c.getContext('2d').drawImage(crop,0,0,92,92);
+  const e = {time:new Date(), cls: sub?sub.name:'꽁초', conf:target.score, dx:t.dx, dy:t.dy, inZone:t.inZone, color: sub?sub.color:TGT, img:c.toDataURL('image/jpeg',.7)};
+  events.unshift(e); if(events.length>500) events.pop();
+  const box = $('#events'); box.querySelector('.empty')?.remove();
+  const d = document.createElement('div'); d.className = 'ev'; d.style.setProperty('--k', e.color);
+  d.innerHTML = `<img src="${e.img}" alt=""><b>${esc(e.cls)} ${Math.round(e.conf*100)}%</b>${e.time.toLocaleTimeString('ko-KR',{hour12:false})}<br>${sgn(e.dx)}, ${sgn(e.dy)} mm`;
+  box.prepend(d); while(box.children.length>60) box.lastChild.remove();
+  $('#evCount').textContent = events.length+'건';
+}
+function trackTarget(s){
+  const key = target ? 'T' : null;
+  if(key === streakKey) streak++; else { streakKey = key; streak = 1; }
+  if(streak < num('stab')) return;
+  if(target && !logged){ logged = true; logEvent(s); }
+  if(!target) logged = false;
+}
+
+/* ---------- robot link ---------- */
+let port = null, writer = null, ws = null, lastTx = 0, txCount = 0, txT = performance.now();
+const enc = new TextEncoder();
+const con = $('#console');
+function log(text, cls){
+  const atBottom = con.scrollTop + con.clientHeight >= con.scrollHeight - 4;
+  const sp = document.createElement('span'); if(cls) sp.className = cls; sp.textContent = text + '\n'; con.append(sp);
+  while(con.childNodes.length > 300) con.firstChild.remove();
+  if(atBottom) con.scrollTop = con.scrollHeight;
+}
+function linkState(){
+  const v = port && ws ? '시리얼, WS' : port ? '시리얼' : ws && ws.readyState===1 ? 'WebSocket' : '끊김';
+  setChip('chipLink','로봇 링크', v, v==='끊김' ? '' : 'ok');
+  $('#serialBtn').textContent = port ? '시리얼 끊기' : '시리얼 연결';
+  $('#wsBtn').textContent = ws ? 'WebSocket 끊기' : 'WebSocket 연결';
+}
+async function send(line, quiet){
+  const data = line + '\n'; let sent = false;
+  try{ if(writer){ await writer.write(enc.encode(data)); sent = true; } }catch(e){ log('시리얼 쓰기 실패: '+e.message, 'er'); await closeSerial(); }
+  try{ if(ws && ws.readyState===1){ ws.send(line); sent = true; } }catch(e){ log('WebSocket 전송 실패', 'er'); }
+  if(!quiet || !sent) log((sent?'> ':'(연결 없음) > ')+line);
+  else if(++txCount % 10 === 1) log('> '+line);
+  return sent;
+}
+async function openSerial(){
+  if(!('serial' in navigator)){ log('이 브라우저는 시리얼 연결을 지원하지 않습니다. 크롬이나 엣지를 쓰세요.', 'er'); return; }
+  try{
+    port = await navigator.serial.requestPort();
+    await port.open({baudRate: num('baud')});
+    writer = port.writable.getWriter(); log('시리얼 연결됨 ('+num('baud')+')', 'sys'); linkState();
+    readSerial(port);
+  }catch(e){ if(e.name!=='NotFoundError') log('시리얼 연결 실패: '+e.message, 'er'); port = null; writer = null; linkState(); }
+}
+async function readSerial(p){
+  const dec = new TextDecoderStream(); const closed = p.readable.pipeTo(dec.writable).catch(()=>{}); const r = dec.readable.getReader(); let buf = '';
+  try{ for(;;){ const {value, done} = await r.read(); if(done) break; buf += value; let i; while((i = buf.indexOf('\n')) >= 0){ const line = buf.slice(0,i).replace(/\r$/,''); buf = buf.slice(i+1); if(line) log('< '+line, 'rx'); } } }catch(_){}
+  finally{ r.releaseLock(); }
+}
+async function closeSerial(){ try{ writer?.releaseLock(); await port?.close(); }catch(_){} port = null; writer = null; log('시리얼 끊김', 'sys'); linkState(); }
+function openWs(){
+  const url = $('#wsUrl').value.trim(); if(!/^wss?:\/\//.test(url)){ log('WebSocket 주소는 ws:// 또는 wss:// 로 시작해야 합니다.', 'er'); return; }
+  if(location.protocol==='https:' && url.startsWith('ws://')) log('https 페이지에서는 ws:// 연결을 브라우저가 막을 수 있습니다. wss:// 를 쓰거나 로컬에서 페이지를 여세요.', 'sys');
+  try{ ws = new WebSocket(url); }catch(e){ log('WebSocket 주소 오류', 'er'); ws = null; return; }
+  ws.onopen = () => { log('WebSocket 연결됨 '+url, 'sys'); linkState(); };
+  ws.onmessage = e => log('< '+String(e.data).slice(0,300), 'rx');
+  ws.onclose = () => { log('WebSocket 끊김', 'sys'); ws = null; linkState(); };
+  ws.onerror = () => log('WebSocket 오류', 'er');
+  linkState();
+}
+function message(){
+  const n = boxes.length;
+  if($('#fmt').value==='json'){
+    if(!target) return JSON.stringify({t:Date.now(), n, tgt:null});
+    const t = target.t, sub = target.sub && subCls(target.sub);
+    return JSON.stringify({t:Date.now(), n, tgt:{cls: sub?target.sub:'butt', conf:+target.score.toFixed(3), x:Math.round(t.dx), y:Math.round(t.dy), in:t.inZone, px:[Math.round(t.cx),Math.round(t.cy)], stable:streak}});
+  }
+  if(!target) return 'N,'+n;
+  const t = target.t; return ['T', Math.round(t.dx), Math.round(t.dy), target.score.toFixed(2), t.inZone?1:0, n].join(',');
+}
+function maybeSend(now){
+  const rate = num('rate');
+  if(!rate){ $('#txRate').textContent = '송신 꺼짐'; return; }
+  if(now - lastTx < 1000/rate) return;
+  if($('#onlyT').value==='1' && !target) return;
+  lastTx = now; if(port || (ws && ws.readyState===1)) send(message(), true);
+  $('#txRate').textContent = (port || ws) ? '초당 '+rate+'번 송신' : '연결 없음';
+}
+
+/* ---------- dataset ---------- */
+const ds = []; let lastCap = 0;
+async function capture(s, reason){
+  if(!s.w) return;
+  const maxW = 1280, k = Math.min(1, maxW/s.w), c = document.createElement('canvas'); c.width = Math.round(s.w*k); c.height = Math.round(s.h*k);
+  c.getContext('2d').drawImage(s.el, 0, 0, c.width, c.height);
+  const blob = await new Promise(r=>c.toBlob(r, 'image/jpeg', .9));
+  const labels = boxes.map(b=>`0 ${((b.x+b.w/2)/s.w).toFixed(6)} ${((b.y+b.h/2)/s.h).toFixed(6)} ${(b.w/s.w).toFixed(6)} ${(b.h/s.h).toFixed(6)}`).join('\n');
+  const t = c.getContext('2d'); const th = document.createElement('canvas'); th.width = th.height = 120;
+  const side = Math.min(c.width, c.height); th.getContext('2d').drawImage(c, (c.width-side)/2, (c.height-side)/2, side, side, 0, 0, 120, 120);
+  const name = 'ggongcam_' + new Date().toISOString().replace(/[-:T]/g,'').slice(0,14) + '_' + String(ds.length).padStart(4,'0');
+  ds.push({name, blob, labels, n:boxes.length, thumb:th.toDataURL('image/jpeg',.7)});
+  paintDs(); if(reason!=='auto') log('프레임 저장: '+name+' (박스 '+boxes.length+'개)', 'sys');
+}
+function paintDs(){
+  $('#dsN').textContent = ds.length; $('#dsB').textContent = ds.reduce((a,d)=>a+d.n,0); $('#dsE').textContent = ds.filter(d=>!d.n).length;
+  $('#dsGrid').innerHTML = ds.slice(-16).reverse().map(d=>`<figure><img src="${d.thumb}" alt=""><figcaption>${d.n}</figcaption></figure>`).join('');
+}
+function maybeAutoCap(s, now){
+  const sec = num('autoCap'); if(!sec || now - lastCap < sec*1000) return;
+  const when = $('#capWhen').value, top = boxes[0]?.score || 0;
+  if(when==='hit' && !boxes.length) return;
+  if(when==='low' && !(top>=.25 && top<=.6)) return;
+  lastCap = now; capture(s, 'auto');
+}
+async function exportZip(){
+  if(!ds.length){ $('#dsNote').textContent = '저장된 프레임이 없습니다. S 키나 지금 저장으로 먼저 모으세요.'; return; }
+  if(typeof JSZip==='undefined'){ $('#dsNote').textContent = 'ZIP 라이브러리를 불러오지 못했습니다. 새로고침해 보세요.'; return; }
+  $('#dsNote').textContent = 'ZIP 만드는 중...';
+  const z = new JSZip();
+  for(const d of ds){ z.file('images/'+d.name+'.jpg', d.blob); z.file('labels/'+d.name+'.txt', d.labels ? d.labels+'\n' : ''); }
+  z.file('data.yaml', 'path: .\ntrain: images\nval: images\nnames:\n  0: butt\n');
+  z.file('README.txt', '꽁줍이 비전에서 모은 프레임. labels 는 그 순간 감지 모델이 낸 박스(YOLO 형식, 클래스 0 = 꽁초)라서 틀린 박스가 섞여 있다.\nRoboflow, CVAT, Label Studio 등으로 불러와 고친 뒤 학습 데이터에 더한다.\n');
+  const blob = await z.generateAsync({type:'blob'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ggongcam_dataset_'+new Date().toISOString().slice(0,10)+'.zip'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+  $('#dsNote').textContent = `이미지 ${ds.length}장을 ZIP으로 내보냈습니다.`;
+}
+
+/* ---------- main loop ---------- */
 async function loop(){
   requestAnimationFrame(loop);
-  if(paused || busy) return;
+  if(busy) return;
   const s = src(); if(!s.w) return;
-  busy = true;
-  const t0 = performance.now();
+  if(paused && srcKind!=='photo'){ draw(s); return; }
+  busy = true; const t0 = performance.now();
   try{
-    if(mode==='auto'){
-      if(detState==='ok'){
-        await autoStep();
-        if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); }
-      }
-    }else if(net){
-      if(collecting){ if(t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); } }
-      else await roiStep();
-    }
-  }catch(e){ console.error(e) }
+    if(detState==='ok'){
+      boxes = await detect(s, num('conf')/100);
+      for(const b of boxes) b.t = telemetry(s, b);
+      target = pickTarget(s, boxes);
+      await classify(s);
+      if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(s); }
+      trackTarget(s); maybeSend(t0); maybeAutoCap(s, t0);
+    }else{ boxes = []; target = null; }
+    draw(s); paintReadout(s);
+  }catch(e){ console.error(e); }
   $('#ms').textContent = Math.round(performance.now()-t0);
-  frames++; const now = performance.now();
-  if(now - fpsT > 1000){ $('#fps').textContent = Math.round(frames*1000/(now-fpsT)); frames = 0; fpsT = now; }
+  frames++; const now = performance.now(); if(now - fpsT > 1000){ $('#fps').textContent = Math.round(frames*1000/(now-fpsT)); frames = 0; fpsT = now; }
   busy = false;
 }
 
-function setMode(m){
-  mode = m; $('#app').classList.toggle('auto', m==='auto'); view.classList.toggle('auto', m==='auto');
-  $('#modeAuto').setAttribute('aria-pressed', m==='auto'); $('#modeRoi').setAttribute('aria-pressed', m==='roi');
-  streak = 0; streakLabel = null; loggedLabel = null; ema = {}; lastBoxes = [];
-  clearBoxes(); $('#tag').classList.remove('on'); $('#bars').innerHTML=''; $('#vName').textContent='대기'; $('#vName').style.color=''; $('#vConf').textContent=''; $('#vNote').textContent='';
-  $('#vNote').textContent='';
-  renderClasses(); refreshStatus();
-  try{ localStorage.setItem(STORE+'-mode', m) }catch(_){}
-}
-function refreshStatus(){
-  if(mode==='auto'){
-    if(detState==='ok') setStatus('자동 감지 켜짐', 'ok');
-    else if(detState==='pending'){ setStatus('감지 모델 준비 중'); $('#vNote').textContent = '자동 감지 모델을 학습하는 중입니다. 그동안 영역 판정 방식은 쓸 수 있습니다.'; }
-    else if(detState==='error') setStatus('감지 모델 로드 실패', 'err');
-    else setStatus('모델 불러오는 중');
-  }else setStatus(net ? '영역 판정 켜짐 ('+tf.getBackend().toUpperCase()+')' : '모델 불러오는 중', net ? 'ok' : '');
-}
-
-/* ---------- persistence ---------- */
-function b64(f32){let s='',u=new Uint8Array(f32.buffer);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
-function unb64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Float32Array(u.buffer)}
-function serialize(){
-  const ds = knn.getClassifierDataset(), data = {};
-  for(const id in ds){ const t = ds[id]; data[id] = {shape:t.shape, data:b64(t.dataSync())} }
-  return {version:1, model:'mobilenet_v2_1.0', created:new Date().toISOString(), classes:classes.map(({id,name,desc,color,custom})=>({id,name,desc,color,custom})), data};
-}
-function restore(obj){
-  if(!obj || !obj.data) throw new Error('형식이 맞지 않습니다');
-  knn.clearAllClasses(); for(const k in counts) delete counts[k];
-  if(Array.isArray(obj.classes) && obj.classes.length) classes = obj.classes.map(c=>({id:String(c.id),name:String(c.name),desc:String(c.desc||''),color:/^(#[0-9a-f]{3,8}|var\(--c-[a-z]+\))$/i.test(c.color)?c.color:EXTRA[0],custom:!!c.custom}));
-  const ds = {};
-  for(const id in obj.data){ const d = obj.data[id]; ds[id] = tf.tensor2d(unb64(d.data), d.shape); counts[id] = d.shape[0]; if(!cls(id)) classes.push({id, name:id, desc:'', color:EXTRA[classes.length%EXTRA.length], custom:true}); }
-  knn.setClassifierDataset(ds);
-  for(const k in thumbs) delete thumbs[k]; ema = {};
-}
-let saveT;
-function save(){
-  clearTimeout(saveT);
-  saveT = setTimeout(()=>{
-    try{ localStorage.setItem(STORE, JSON.stringify(serialize())); $('#saveNote').textContent = `샘플 ${total()}장이 이 브라우저에 저장되어 있습니다.`; }
-    catch(e){ $('#saveNote').textContent = '브라우저 저장 공간이 부족합니다. JSON으로 내보내 보관하세요.'; }
-  }, 400);
-}
-
-/* ---------- events ---------- */
-const list = $('#classList');
-list.addEventListener('pointerdown', e=>{const b=e.target.closest('.hold'); if(!b) return; e.preventDefault(); b.setPointerCapture(e.pointerId); startHold(b.dataset.id)});
-list.addEventListener('pointerup', stopHold); list.addEventListener('pointercancel', stopHold);
-list.addEventListener('lostpointercapture', stopHold);
-list.addEventListener('click', e=>{
-  const r = e.target.closest('[data-reset]'), d = e.target.closest('[data-del]');
-  if(r){ const id=r.dataset.reset; if(counts[id]) knn.clearClass(id); counts[id]=0; thumbs[id]=[]; ema={}; renderClasses(); save(); }
-  if(d){ const id=d.dataset.del; if(counts[id]) knn.clearClass(id); delete counts[id]; classes = classes.filter(c=>c.id!==id); ema={}; renderClasses(); save(); }
+/* ---------- wiring ---------- */
+for(const id of SET_IDS){ $('#'+id)?.addEventListener('input', ()=>{ paintOutputs(); saveSettings(); if(id==='fmt'||id==='fieldMm') paintSample(); }); }
+function paintSample(){ $('#fmtSample').textContent = '예: ' + ($('#fmt').value==='json' ? '{"t":1764050000000,"n":2,"tgt":{"cls":"butt","conf":0.87,"x":32,"y":-15,"in":false,"px":[812,540],"stable":9}}' : 'T,32,-15,0.87,0,2'); }
+const toggle = (sel, fn) => $(sel).addEventListener('click', ()=>{ const b = $(sel); b.setAttribute('aria-pressed', String(!on(sel))); fn && fn(on(sel)); saveSettings(); });
+toggle('#zoneBtn'); toggle('#gridBtn'); toggle('#mirrorBtn', v => view.classList.toggle('mirror', v));
+function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', String(paused)); $('#pauseBtn').firstChild.textContent = paused ? '재개 ' : '일시정지 '; if(srcKind!=='photo') paused ? video.pause() : video.play().catch(()=>{}); }
+$('#pauseBtn').addEventListener('click', togglePause);
+$('#camSel').addEventListener('change', e=>startCam(e.target.value));
+$('#resSel').addEventListener('change', ()=>{ if(srcKind==='cam') startCam($('#camSel').value||undefined); });
+$('#retry').addEventListener('click', ()=>startCam($('#camSel').value||undefined));
+$('#fileBtn').addEventListener('click', ()=> srcKind==='cam' ? $('#fileIn').click() : startCam($('#camSel').value||undefined));
+$('#msgFile').addEventListener('click', ()=>$('#fileIn').click());
+$('#fileIn').addEventListener('change', e=>{ const f = e.target.files[0]; if(f) openFile(f); e.target.value=''; });
+view.addEventListener('dragover', e=>e.preventDefault());
+view.addEventListener('drop', e=>{ e.preventDefault(); const f = e.dataTransfer.files[0]; if(f && /^(image|video)\//.test(f.type)) openFile(f); });
+$('#capBtn').addEventListener('click', ()=>capture(src()));
+$('#capBtn2').addEventListener('click', ()=>capture(src()));
+$('#dsZip').addEventListener('click', exportZip);
+function twoStep(btn, label, fn){ let tm; btn.addEventListener('click', ()=>{ if(!btn.classList.contains('arm')){ btn.classList.add('arm'); btn.textContent = '한 번 더 누르면 삭제'; tm = setTimeout(()=>{ btn.classList.remove('arm'); btn.textContent = label; }, 3000); return; } clearTimeout(tm); btn.classList.remove('arm'); btn.textContent = label; fn(); }); }
+twoStep($('#dsClear'), '모두 삭제', ()=>{ ds.length = 0; paintDs(); $('#dsNote').textContent = '저장한 프레임을 모두 지웠습니다.'; });
+twoStep($('#wipeBtn'), '샘플 삭제', ()=>{ knn?.clearAllClasses(); for(const k in counts) delete counts[k]; try{ localStorage.removeItem(SUBKEY) }catch(_){} renderSubs(); $('#subNote').textContent = '종류 샘플을 모두 지웠습니다.'; });
+$('#evClear').addEventListener('click', ()=>{ events.length = 0; $('#events').innerHTML = '<span class="empty">목표가 정해진 프레임 수만큼 이어지면 캡처가 남습니다.</span>'; $('#evCount').textContent = '0건'; logged = false; });
+$('#evCsv').addEventListener('click', ()=>{
+  if(!events.length){ log('내보낼 이벤트가 없습니다.', 'sys'); return; }
+  const rows = [['time','class','conf','x_mm','y_mm','in_zone'], ...events.slice().reverse().map(e=>[e.time.toISOString(), e.cls, e.conf.toFixed(3), Math.round(e.dx), Math.round(e.dy), e.inZone?1:0])];
+  const blob = new Blob(['﻿'+rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ggongcam_events_'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
 });
-list.addEventListener('keydown', e=>{const b=e.target.closest('.hold'); if(b && (e.key===' '||e.key==='Enter') && !e.repeat){e.preventDefault(); startHold(b.dataset.id)}});
-list.addEventListener('keyup', e=>{if(e.key===' '||e.key==='Enter') stopHold()});
+$('#conClear').addEventListener('click', ()=>{ con.textContent = ''; });
+$('#serialBtn').addEventListener('click', ()=> port ? closeSerial() : openSerial());
+$('#wsBtn').addEventListener('click', ()=>{ if(ws){ ws.close(); ws = null; linkState(); } else openWs(); });
+$('#sendForm').addEventListener('submit', e=>{ e.preventDefault(); const v = $('#sendIn').value.trim(); if(!v) return; send(v); $('#sendIn').value = ''; });
 
+for(const t of document.querySelectorAll('[role=tab]')) t.addEventListener('click', ()=>{
+  for(const u of document.querySelectorAll('[role=tab]')){ const sel = u===t; u.setAttribute('aria-selected', String(sel)); $('#'+u.getAttribute('aria-controls')).classList.toggle('on', sel); }
+});
+const cl = $('#classList');
+cl.addEventListener('pointerdown', e=>{ const b = e.target.closest('.hold'); if(!b) return; e.preventDefault(); b.setPointerCapture(e.pointerId); startHold(b.dataset.id); });
+cl.addEventListener('pointerup', stopHold); cl.addEventListener('pointercancel', stopHold); cl.addEventListener('lostpointercapture', stopHold);
+cl.addEventListener('click', e=>{ const r = e.target.closest('[data-reset]'), d = e.target.closest('[data-del]');
+  if(r){ const id = r.dataset.reset; if(counts[id]) knn.clearClass(id); counts[id] = 0; renderSubs(); saveSubs(); }
+  if(d){ const id = d.dataset.del; if(counts[id]) knn.clearClass(id); delete counts[id]; subs = subs.filter(c=>c.id!==id); renderSubs(); saveSubs(); } });
+$('#addForm').addEventListener('submit', e=>{ e.preventDefault(); const name = $('#addName').value.trim(); if(!name) return; subs.push({id:'c'+Date.now().toString(36), name, desc:'', color:EXTRA[subs.filter(c=>c.custom).length%EXTRA.length], custom:true}); $('#addName').value=''; renderSubs(); saveSubs(); });
+$('#exportBtn').addEventListener('click', ()=>{ if(!knn || !subTotal()){ $('#subNote').textContent = '내보낼 샘플이 없습니다.'; return; } const blob = new Blob([JSON.stringify(serializeSubs())], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ggongcam_subtype_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); });
+$('#importBtn').addEventListener('click', ()=>$('#importFile').click());
+$('#importFile').addEventListener('change', async e=>{ const f = e.target.files[0]; if(!f) return; try{ restoreSubs(JSON.parse(await f.text())); renderSubs(); saveSubs(); $('#subNote').textContent = `${f.name}에서 샘플 ${subTotal()}장을 불러왔습니다.`; }catch(_){ $('#subNote').textContent = '불러오지 못했습니다. 이 페이지에서 내보낸 JSON인지 확인하세요.'; } e.target.value=''; });
+
+const help = $('#help');
+$('#helpBtn').addEventListener('click', ()=>{ help.classList.add('on'); $('#helpClose').focus(); });
+$('#helpClose').addEventListener('click', ()=>help.classList.remove('on'));
+help.addEventListener('click', e=>{ if(e.target===help) help.classList.remove('on'); });
 document.addEventListener('keydown', e=>{
-  if(e.target.matches('input,select,textarea') || e.repeat) return;
-  if(/^[1-9]$/.test(e.key) && classes[+e.key-1]){ startHold(classes[+e.key-1].id); }
-  else if(e.key===' ' && !e.target.closest('button')){ e.preventDefault(); togglePause(); }
+  if(e.key==='Escape'){ help.classList.remove('on'); return; }
+  if(e.target.matches('input,select,textarea') || e.repeat || e.metaKey || e.ctrlKey) return;
+  const k = e.key.toLowerCase();
+  if(k===' ' && !e.target.closest('button')){ e.preventDefault(); togglePause(); }
+  else if(k==='s'){ capture(src()); }
+  else if(k==='z') $('#zoneBtn').click(); else if(k==='g') $('#gridBtn').click(); else if(k==='m') $('#mirrorBtn').click();
+  else if(k==='?') $('#helpBtn').click();
+  else if(/^[1-9]$/.test(k) && subs[+k-1]) startHold(subs[+k-1].id);
 });
 document.addEventListener('keyup', e=>{ if(/^[1-9]$/.test(e.key)) stopHold(); });
 window.addEventListener('blur', stopHold);
 
-function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', paused); $('#pauseBtn').firstChild.textContent = paused ? '재개 ' : '일시정지 '; if(!photo) paused ? video.pause() : video.play(); }
-$('#pauseBtn').addEventListener('click', togglePause);
-$('#mirrorBtn').addEventListener('click', e=>{ const on = view.classList.toggle('mirror'); e.currentTarget.setAttribute('aria-pressed', on); });
-$('#camSel').addEventListener('change', e=>{ if(photo) closePhoto(); startCam(e.target.value); });
-$('#retry').addEventListener('click', ()=>startCam($('#camSel').value||undefined));
-$('#modeAuto').addEventListener('click', ()=>setMode('auto'));
-$('#modeRoi').addEventListener('click', ()=>setMode('roi'));
-$('#photoBtn').addEventListener('click', ()=> photo ? closePhoto() : $('#photoFile').click());
-$('#photoFile').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) openPhoto(f); e.target.value=''; });
-view.addEventListener('dragover', e=>e.preventDefault());
-view.addEventListener('drop', e=>{ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f && f.type.startsWith('image/')) openPhoto(f); });
-$('#roiSize').addEventListener('input', layoutRoi);
-new ResizeObserver(layoutRoi).observe(view);
-for(const [id,out,fmt] of [['det','detOut',v=>v+'%'],['thr','thrOut',v=>v+'%'],['stab','stabOut',v=>v],['kVal','kOut',v=>v],['smooth','smoothOut',v=>v+'%']]){
-  $('#'+id).addEventListener('input', e=>$('#'+out).textContent=fmt(e.target.value));
-}
-$('#clearLog').addEventListener('click', ()=>{ for(const k in tally) delete tally[k]; renderTally(); $('#strip').innerHTML='<span class="empty">꽁초가 안정적으로 잡히면 여기에 캡처가 남습니다.</span>'; loggedLabel=null; });
-$('#addForm').addEventListener('submit', e=>{
-  e.preventDefault(); const name = $('#addName').value.trim(); if(!name) return;
-  const n = classes.filter(c=>c.custom).length;
-  classes.push({id:'c'+Date.now().toString(36), name, desc:'', color:EXTRA[n%EXTRA.length], custom:true});
-  $('#addName').value=''; renderClasses(); save();
-});
-$('#exportBtn').addEventListener('click', ()=>{
-  if(!total()){ $('#saveNote').textContent='내보낼 샘플이 없습니다. 먼저 샘플을 수집하세요.'; return; }
-  const blob = new Blob([JSON.stringify(serialize())], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `kkongjup-samples-${new Date().toISOString().slice(0,10)}.json`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
-  $('#saveNote').textContent = `샘플 ${total()}장을 내보냈습니다.`;
-});
-$('#importBtn').addEventListener('click', ()=>$('#importFile').click());
-$('#importFile').addEventListener('change', async e=>{
-  const f = e.target.files[0]; if(!f) return;
-  try{ restore(JSON.parse(await f.text())); renderClasses(); save(); $('#saveNote').textContent = `${f.name}에서 샘플 ${total()}장을 불러왔습니다.`; }
-  catch(err){ $('#saveNote').textContent = '불러오지 못했습니다. 이 페이지에서 내보낸 JSON 파일인지 확인하세요.'; }
-  e.target.value='';
-});
-let armT;
-$('#wipeBtn').addEventListener('click', e=>{
-  const b = e.currentTarget;
-  if(!b.classList.contains('arm')){ b.classList.add('arm'); b.textContent='한 번 더 누르면 삭제'; armT=setTimeout(()=>{b.classList.remove('arm');b.textContent='전체 샘플 삭제'},3000); return; }
-  clearTimeout(armT); b.classList.remove('arm'); b.textContent='전체 샘플 삭제';
-  knn.clearAllClasses(); for(const k in counts) delete counts[k]; for(const k in thumbs) delete thumbs[k]; ema={};
-  try{localStorage.removeItem(STORE)}catch(_){}
-  renderClasses(); $('#saveNote').textContent='모든 샘플을 삭제했습니다.';
-});
-
 /* ---------- boot ---------- */
-try{ const m = localStorage.getItem(STORE+'-mode'); if(m==='roi') mode='roi'; }catch(_){}
-setMode(mode);
-startCam();
-if(typeof ort !== 'undefined') loadDetector(); else { detState='error'; refreshStatus(); }
+loadSettings(); paintOutputs(); paintSample(); renderSubs(); paintDs(); linkState();
+log('꽁줍이 비전 시작. 로봇 탭에서 시리얼이나 WebSocket을 연결하면 목표 좌표를 보냅니다.', 'sys');
+startCam(); loadDetector();
 (async()=>{
   try{
     if(typeof tf==='undefined' || typeof mobilenet==='undefined') throw new Error('lib');
-    await tf.ready();
-    knn = knnClassifier.create();
+    await tf.ready(); knn = knnClassifier.create();
     try{ net = await mobilenet.load({version:2, alpha:1.0}); }catch(_){ net = await mobilenet.load({version:1, alpha:1.0}); }
-    try{ const s = localStorage.getItem(STORE); if(s){ restore(JSON.parse(s)); renderClasses(); $('#saveNote').textContent=`저장된 샘플 ${total()}장을 불러왔습니다.`; } }catch(_){}
-  }catch(e){ console.error(e); if(mode==='roi') setStatus('분류 모델 로드 실패', 'err'); }
-  refreshStatus();
+    try{ const s = localStorage.getItem(SUBKEY); if(s){ restoreSubs(JSON.parse(s)); renderSubs(); $('#subNote').textContent = `저장된 샘플 ${subTotal()}장을 불러왔습니다.`; } }catch(_){}
+  }catch(e){ console.error(e); $('#subNote').textContent = '종류 분류 모델을 불러오지 못했습니다. 감지는 그대로 동작합니다.'; }
 })();
 requestAnimationFrame(loop);
 }
