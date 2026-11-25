@@ -1,0 +1,42 @@
+# 꽁초 감지 모델 학습 → public/models/butt.onnx 커밋 → Pages 자동 배포
+# 실행: Actions 탭에서 "train" 수동 실행, 또는 training/ 폴더를 바꿔서 main 에 push
+name: train
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "학습 시간 상한(시간)"
+        default: "1.25"
+  push:
+    branches: [main]
+    paths: ["training/**"]
+permissions:
+  contents: write
+concurrency: train
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: install
+        run: |
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install ultralytics onnx onnxslim onnxruntime
+      - name: dataset (CigWasteNet, MIT)
+        run: |
+          git clone --depth 1 https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection /tmp/cig
+          python training/prepare.py /tmp/cig/dataset/CigWasteNet.yolov8-obb /tmp/butt
+      - name: train
+        run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '1.25' }}"
+      - name: commit model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/butt.onnx public/models/butt.json
+          MAP=$(python -c "import json;print(json.load(open('public/models/butt.json'))['test']['map50'])")
+          git commit -m "꽁초 감지 모델 학습 결과 (test mAP50 ${MAP})" || exit 0
+          git pull --rebase origin main
+          git push origin HEAD:main
