@@ -6,7 +6,8 @@
 - **로봇팔 모드**: 목표 하나를 골라 집기 기준점 기준 mm 좌표를 계산하고 로봇에 보낸다.
 
 - 사이트: **https://ggongcam.pages.dev** (PC 크롬, 엣지 권장)
-- 감지: 공개 데이터셋으로 학습한 YOLO11n을 onnxruntime-web으로 실행 (`public/models/butt.onnx`). 학습 없이 바로 동작.
+- 감지: 공개 데이터셋으로 학습한 YOLO11n을 onnxruntime-web으로 실행 (`public/models/`). WebGPU가 되면 GPU, 아니면 CPU 멀티코어(WASM 스레드, `_headers`의 COOP/COEP로 교차 출처 격리). ORT 파일은 `public/vendor/ort-1.20.1/`에 직접 둔다.
+- 감지 범위: 전체 / 가운데 2배 확대 / 정밀(전체 + 4분할 타일). 멀리서 작은 꽁초를 볼 때 확대나 정밀.
 - 목표: 화면 속 꽁초 중 하나를 목표로 골라(기준점에 가까운 순, 신뢰도 순, 큰 순) 집기 기준점 기준 X/Y mm 오프셋과 집기 영역 안 여부를 계산.
 - 로봇 링크: Web Serial(USB로 ESP32, 아두이노) 또는 WebSocket(라즈베리파이)으로 목표를 주기적으로 송신. 예제는 `robot/`.
 - 데이터셋: 프레임을 현재 감지 박스와 함께 YOLO 라벨로 저장, ZIP으로 내보내 국내 데이터로 재학습.
