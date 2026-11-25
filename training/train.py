@@ -31,6 +31,8 @@ for sz in (IMGSZ, 384):
     name = f"butt-{sz}.onnx"; shutil.copy2(f, outdir / name)
     variants.append({"file": name, "imgsz": sz})
 shutil.copy2(outdir / f"butt-{IMGSZ}.onnx", outdir / "butt.onnx")
+if (outdir / "butt-close-416.onnx").exists():
+    variants.append({"file": "butt-close-416.onnx", "imgsz": 416, "kind": "close", "note": "CigWasteNet만 학습한 첫 모델. 바닥을 가까이서 내려다볼 때 더 정확"})
 Path("training/weights").mkdir(parents=True, exist_ok=True)
 shutil.copy2(best_path, "training/weights/butt.pt")
 info = {
