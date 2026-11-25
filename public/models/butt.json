@@ -1,0 +1,16 @@
+{
+  "file": "butt.onnx",
+  "imgsz": 416,
+  "names": [
+    "꽁초"
+  ],
+  "test": {
+    "precision": 0.9604,
+    "recall": 1.0,
+    "map50": 0.9906,
+    "map50_95": 0.7582
+  },
+  "dataset": "CigWasteNet (MIT) 1508/392/100",
+  "base": "yolo11n",
+  "trained_at": "2026-11-25T07:13Z"
+}
