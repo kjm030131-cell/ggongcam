@@ -1,0 +1,13 @@
+# 모든 push·PR: 문법 검사. 배포는 Cloudflare Pages가 main push를 받아서 한다.
+name: qa
+on:
+  push:
+  pull_request:
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tools/check.mjs

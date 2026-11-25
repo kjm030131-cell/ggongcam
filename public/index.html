@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>꽁줍이 인식 실험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE   현장 계측기. 조용하고 정확하게, 판정 결과만 크게.
+IDEA    로봇 비전 보드의 검사창: 바닥을 내려다보는 카메라와 판정 사각형.
+PICTURE 실시간 카메라 화면 + 판정 사각형(모서리 색이 클래스 색으로 바뀜).
+COLOUR  흰 바탕, 먹색 글자, 필터 코르크색(일반), 슬레이트(슬림), 청록(전자담배 스틱).
+TYPE    IBM Plex Sans KR 하나, 숫자는 tabular.
+*/
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#14171a);--panel:light-dark(#f2f3f1,#1c2024);--line:light-dark(#dcdfdb,#2d3237);
+--ink:light-dark(#16191b,#eceeea);--mute:light-dark(#62686d,#9aa1a6);--view:#0d1012;
+--c-bg:#8a9196;--c-regular:#c27a2c;--c-slim:#3f6e9a;--c-heets:#23806f;--focus:light-dark(#1d5fd1,#7fb0ff)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow-x:clip;font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h2{font-size:15px;font-weight:600;margin:0 0 4px}
+.top{display:flex;align-items:center;gap:16px;padding:12px max(2.5vw,16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px}
+.brand b{font-weight:700}.brand span{color:var(--mute);font-size:14px}
+.status{margin-left:auto;font-size:14px;display:flex;align-items:center;gap:8px;color:var(--mute)}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.status.ok::before{background:var(--c-heets)}.status.err::before{background:#c43d3d}
+.perf{font-size:13px;color:var(--mute);white-space:nowrap}
+.app{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:0;min-height:calc(100vh - 57px)}
+.stage{padding:20px max(2.5vw,16px);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.view{position:relative;background:var(--view);border-radius:6px;overflow:hidden;aspect-ratio:4/3;width:100%}
+.view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.view.mirror video{transform:scaleX(-1)}
+.roi{position:absolute;left:50%;top:50%;width:var(--s,200px);height:var(--s,200px);transform:translate(-50%,-50%);box-shadow:0 0 0 200vmax rgba(8,10,12,.5);--k:#ffffff;transition:--k .2s}
+.roi i{position:absolute;width:26px;height:26px;border:3px solid var(--k);transition:border-color .18s}
+.roi i:nth-child(1){left:-2px;top:-2px;border-right:0;border-bottom:0}
+.roi i:nth-child(2){right:-2px;top:-2px;border-left:0;border-bottom:0}
+.roi i:nth-child(3){left:-2px;bottom:-2px;border-right:0;border-top:0}
+.roi i:nth-child(4){right:-2px;bottom:-2px;border-left:0;border-top:0}
+.roi.rec{outline:2px dashed rgba(255,255,255,.7);outline-offset:4px}
+.roi.hit{animation:hit .5s ease-out}
+@keyframes hit{0%{box-shadow:0 0 0 0 var(--k),0 0 0 200vmax rgba(8,10,12,.5)}100%{box-shadow:0 0 0 22px transparent,0 0 0 200vmax rgba(8,10,12,.5)}}
+.tag{position:absolute;left:-2px;bottom:calc(100% + 8px);background:var(--k);color:#fff;font-size:14px;font-weight:600;padding:3px 10px;border-radius:3px;white-space:nowrap;opacity:0;transition:opacity .15s}
+.tag.on{opacity:1}
+.msg{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:14px;padding:24px;text-align:center;color:#e8eaea;background:var(--view)}
+.msg.on{display:grid}.msg p{margin:0;max-width:44ch}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.field{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute)}
+select{min-height:40px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:0 10px;font-size:15px;max-width:260px}
+.btn{min-height:40px;padding:0 14px;border:1px solid var(--line);background:var(--bg);border-radius:4px;cursor:pointer;font-size:15px;white-space:nowrap}
+.btn:hover{background:var(--panel)}
+.btn.solid{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.warn{color:#c43d3d}.btn.arm{background:#c43d3d;color:#fff;border-color:#c43d3d}
+.btn[aria-pressed=true]{background:var(--panel);border-color:var(--ink)}
+input[type=range]{width:120px;accent-color:var(--ink)}
+.log{border-top:1px solid var(--line);padding-top:14px}
+.loghead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-bottom:10px}
+.tally{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.tally span{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.loghead .btn{margin-left:auto;min-height:34px;font-size:14px}
+.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;min-height:118px}
+.strip .empty{color:var(--mute);font-size:14px;align-self:center}
+.shot{flex:none;width:96px;font-size:12px;line-height:1.35}
+.shot img{width:96px;height:96px;display:block;border-radius:4px;border-bottom:4px solid var(--k);object-fit:cover;background:var(--panel)}
+.shot b{display:block;font-weight:600;margin-top:4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shot span{color:var(--mute)}
+.side{display:flex;flex-direction:column}
+.side>section{padding:18px max(2vw,18px);border-bottom:1px solid var(--line)}
+.result{background:var(--panel)}
+.verdict{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;min-height:56px}
+.verdict #vName{font-size:clamp(30px,3.4vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.verdict #vConf{font-size:20px;color:var(--mute)}
+.bar{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3.2em;align-items:center;gap:10px;font-size:14px;margin:7px 0}
+.bar .tr{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.bar .tr div{height:100%;background:var(--k);width:0;transition:width .12s linear}
+.bar em{font-style:normal;text-align:right}
+.bar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thr{position:relative}
+.note{font-size:13px;color:var(--mute);margin:6px 0 0}
+.hint{font-size:14px;color:var(--mute);margin:0 0 12px}
+.cls{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.cls:first-child{border-top:0}
+.cls .sw{width:14px;height:40px;border-radius:3px;background:var(--k)}
+.cls .tx b{font-weight:600;font-size:15px}.cls .tx small{display:block;color:var(--mute);font-size:13px;line-height:1.4}
+.cls .act{display:flex;gap:6px;align-items:center}
+.hold{min-height:44px;min-width:104px;border:1px solid var(--k);color:var(--ink);background:transparent;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap}
+.hold .n{font-weight:400;color:var(--mute);margin-left:6px}
+.hold.on{background:var(--k);color:#fff}.hold.on .n{color:#fff}
+.mini{min-height:44px;width:40px;border:1px solid var(--line);background:transparent;border-radius:4px;cursor:pointer;color:var(--mute);font-size:13px}
+.mini:hover{color:#c43d3d}
+.thumbs{grid-column:2/4;display:flex;gap:4px}
+.thumbs img{width:34px;height:34px;border-radius:3px;object-fit:cover}
+#addForm{display:flex;gap:8px;margin-top:12px}
+#addForm input{flex:1;min-height:40px;border:1px solid var(--line);border-radius:4px;padding:0 10px;font-size:16px;background:var(--bg)}
+.set{display:grid;grid-template-columns:minmax(0,1fr) auto 3.4em;gap:6px 12px;align-items:center;font-size:14px}
+.set output{text-align:right}
+.set label{color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.kbd{display:inline-block;min-width:20px;padding:0 5px;border:1px solid var(--line);border-radius:3px;font-size:12px;text-align:center;color:var(--mute);margin-left:2px}
+@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.stage{border-right:0;border-bottom:1px solid var(--line)}}
+@media(max-width:600px){.perf{display:none}.brand span{display:none}.bar{grid-template-columns:6em minmax(0,1fr) 3em}.hold{min-width:88px}}
+@media(prefers-reduced-motion:reduce){.roi.hit{animation:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="2" y="8" width="18" height="6" rx="1.5" fill="#e9e4d8" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="8" width="7" height="6" rx="1.5" fill="#c27a2c"/></svg>
+    <b>꽁줍이</b><span>꽁초 인식 실험</span>
+  </div>
+  <div class="status" id="status">모델 불러오는 중</div>
+  <div class="perf"><span id="fps">0</span> fps &nbsp; <span id="ms">0</span> ms</div>
+</header>
+
+<main class="app">
+  <section class="stage">
+    <div class="view mirror" id="view">
+      <video id="video" playsinline muted></video>
+      <div class="roi" id="roi"><i></i><i></i><i></i><i></i><div class="tag" id="tag"></div></div>
+      <div class="msg" id="msg"><p id="msgText"></p><button class="btn solid" id="retry" type="button">카메라 다시 연결</button></div>
+    </div>
+
+    <div class="toolbar">
+      <label class="field">카메라 <select id="camSel" aria-label="카메라 선택"></select></label>
+      <button class="btn" id="mirrorBtn" type="button" aria-pressed="true">좌우 반전</button>
+      <button class="btn" id="pauseBtn" type="button" aria-pressed="false">일시정지 <span class="kbd">Space</span></button>
+      <label class="field">판정 영역 <input type="range" id="roiSize" min="30" max="100" value="60"> <span id="roiOut">60%</span></label>
+    </div>
+
+    <div class="log">
+      <div class="loghead">
+        <h2>감지 기록</h2>
+        <div class="tally" id="tally"></div>
+        <button class="btn" id="clearLog" type="button">기록 비우기</button>
+      </div>
+      <div class="strip" id="strip"><span class="empty">같은 판정이 안정적으로 이어지면 여기에 캡처가 남습니다.</span></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="result" aria-live="polite">
+      <div class="verdict"><span id="vName">대기</span><span id="vConf"></span></div>
+      <div id="bars"></div>
+      <p class="note" id="vNote">두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다.</p>
+    </section>
+
+    <section>
+      <h2>학습 샘플</h2>
+      <p class="hint">버튼을 누르고 있는 동안 사각형 안 화면이 초당 약 10장씩 쌓입니다. 숫자키로도 됩니다. 각도, 거리, 조명, 바닥을 바꿔가며 클래스당 50장 이상 권장.</p>
+      <div id="classList"></div>
+      <form id="addForm"><input id="addName" maxlength="16" placeholder="새 클래스 이름" aria-label="새 클래스 이름"><button class="btn" type="submit">추가</button></form>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:10px">판정 설정</h2>
+      <div class="set">
+        <label for="thr">판정 기준 신뢰도</label><input type="range" id="thr" min="40" max="95" value="70"><output id="thrOut">70%</output>
+        <label for="stab">기록까지 연속 프레임</label><input type="range" id="stab" min="2" max="30" value="8"><output id="stabOut">8</output>
+        <label for="kVal">k (이웃 수)</label><input type="range" id="kVal" min="1" max="15" value="5"><output id="kOut">5</output>
+        <label for="smooth">결과 부드럽게</label><input type="range" id="smooth" min="0" max="90" value="50"><output id="smoothOut">50%</output>
+      </div>
+    </section>
+
+    <section>
+      <h2>데이터</h2>
+      <p class="hint" id="saveNote">샘플은 이 브라우저에 자동 저장됩니다.</p>
+      <div class="row">
+        <button class="btn" id="exportBtn" type="button">JSON 내보내기</button>
+        <button class="btn" id="importBtn" type="button">JSON 불러오기</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <button class="btn warn" id="wipeBtn" type="button">전체 샘플 삭제</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6/dist/knn-classifier.min.js"></script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STORE = 'kkongjup-vision-v1';
+const EXTRA = ['#8e5ba8','#b04a4a','#5e7f2e','#a06a8a','#4f5fa8'];
+
+let classes = [
+  {id:'bg', name:'배경', desc:'꽁초 없는 바닥, 손, 낙엽, 이물질', color:'var(--c-bg)'},
+  {id:'regular', name:'일반 꽁초', desc:'레종, 던힐, 말보로 등 지름 약 7.8mm', color:'var(--c-regular)'},
+  {id:'slim', name:'얇은 꽁초', desc:'에쎄 등 슬림, 슈퍼슬림 지름 약 5.4mm', color:'var(--c-slim)'},
+  {id:'heets', name:'전자담배 스틱', desc:'아이코스 테리아, 센티아, 릴 전용 스틱 등', color:'var(--c-heets)'}
+];
+const counts = {}, thumbs = {};
+const tally = {};
+let net = null, knn = null, stream = null;
+let paused = false, collecting = null, lastAdd = 0, busy = false;
+let ema = {}, streak = 0, streakLabel = null, loggedLabel = null;
+let frames = 0, fpsT = performance.now();
+const crop = document.createElement('canvas'); crop.width = crop.height = 224;
+const cctx = crop.getContext('2d', {willReadFrequently:true});
+const video = $('#video'), view = $('#view'), roi = $('#roi');
+
+const cfg = () => ({thr:+$('#thr').value/100, stab:+$('#stab').value, k:+$('#kVal').value, sm:+$('#smooth').value/100, roi:+$('#roiSize').value/100});
+const cls = id => classes.find(c => c.id === id);
+const total = () => Object.values(counts).reduce((a,b)=>a+b,0);
+const ready = () => classes.filter(c => counts[c.id] > 0).length >= 2;
+
+function setStatus(t, kind){const s=$('#status');s.textContent=t;s.className='status'+(kind?' '+kind:'')}
+function showMsg(t){$('#msgText').textContent=t;$('#msg').classList.toggle('on',!!t)}
+
+/* ---------- UI rendering ---------- */
+function renderClasses(){
+  $('#classList').innerHTML = classes.map((c,i) => `
+    <div class="cls" style="--k:${c.color}">
+      <div class="sw"></div>
+      <div class="tx"><b>${esc(c.name)}</b>${i<9?`<span class="kbd">${i+1}</span>`:''}<small>${esc(c.desc||'')}</small></div>
+      <div class="act">
+        <button class="hold" type="button" data-id="${c.id}">수집<span class="n">${counts[c.id]||0}</span></button>
+        <button class="mini" type="button" data-reset="${c.id}" title="${esc(c.name)} 샘플 초기화" aria-label="${esc(c.name)} 샘플 초기화">비움</button>
+        ${c.custom?`<button class="mini" type="button" data-del="${c.id}" aria-label="${esc(c.name)} 클래스 삭제">삭제</button>`:''}
+      </div>
+      ${(thumbs[c.id]||[]).length?`<div class="thumbs">${thumbs[c.id].map(u=>`<img src="${u}" alt="">`).join('')}</div>`:''}
+    </div>`).join('');
+  $('#bars').innerHTML = classes.map(c => `
+    <div class="bar" style="--k:${c.color}" data-bar="${c.id}"><span class="nm">${esc(c.name)}</span><div class="tr"><div></div></div><em>0%</em></div>`).join('');
+  renderTally();
+}
+function updateCount(id){
+  const b = document.querySelector(`.hold[data-id="${id}"] .n`); if(b) b.textContent = counts[id]||0;
+}
+function renderTally(){
+  $('#tally').innerHTML = classes.filter(c=>c.id!=='bg').map(c=>`<span><i class="dot" style="background:${c.color}"></i>${esc(c.name)} <b>${tally[c.id]||0}</b></span>`).join('');
+}
+
+/* ---------- ROI geometry ---------- */
+function layoutRoi(){
+  const r = view.getBoundingClientRect();
+  roi.style.setProperty('--s', Math.round(Math.min(r.width, r.height) * cfg().roi) + 'px');
+  $('#roiOut').textContent = Math.round(cfg().roi*100) + '%';
+}
+function grab(){
+  const vw = video.videoWidth, vh = video.videoHeight; if(!vw) return false;
+  // object-fit:cover 기준 화면에 보이는 영역과 동일하게 자르기
+  const r = view.getBoundingClientRect();
+  const scale = Math.max(r.width/vw, r.height/vh);
+  const side = Math.min(r.width, r.height) * cfg().roi / scale;
+  cctx.drawImage(video, (vw-side)/2, (vh-side)/2, side, side, 0, 0, 224, 224);
+  return true;
+}
+function snap(size){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d');
+  if(view.classList.contains('mirror')){x.translate(size,0);x.scale(-1,1)}
+  x.drawImage(crop,0,0,size,size); return c.toDataURL('image/jpeg',.75);
+}
+
+/* ---------- camera ---------- */
+async function listCams(selected){
+  try{
+    const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+    $('#camSel').innerHTML = devs.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'카메라 '+(i+1))}</option>`).join('');
+    if(selected) $('#camSel').value = selected;
+  }catch(e){}
+}
+async function startCam(deviceId){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  if(!navigator.mediaDevices?.getUserMedia){showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬으로 열어주세요.');return}
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video: deviceId ? {deviceId:{exact:deviceId}, width:{ideal:1280}, height:{ideal:720}} : {width:{ideal:1280}, height:{ideal:720}, facingMode:'environment'}});
+    video.srcObject = stream; await video.play(); showMsg('');
+    const id = stream.getVideoTracks()[0].getSettings().deviceId;
+    await listCams(id);
+    video.onloadedmetadata = layoutRoi; layoutRoi();
+  }catch(e){
+    showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요.'
+      : e.name==='NotFoundError' ? '연결된 카메라를 찾지 못했습니다. 웹캠을 꽂고 다시 연결하세요.'
+      : e.name==='NotReadableError' ? '다른 프로그램이 카메라를 쓰고 있습니다. 해당 프로그램을 닫고 다시 연결하세요.'
+      : '카메라를 열지 못했습니다. ('+e.name+')');
+  }
+}
+
+/* ---------- collect ---------- */
+async function addSample(id){
+  if(!net || !grab()) return;
+  const emb = tf.tidy(()=>net.infer(crop, true));
+  knn.addExample(emb, id); emb.dispose();
+  counts[id] = (counts[id]||0) + 1; updateCount(id);
+  const t = thumbs[id] = thumbs[id]||[];
+  if(counts[id] % 5 === 1){ t.unshift(snap(68)); if(t.length>6) t.pop(); }
+}
+function startHold(id){
+  if(!cls(id)) return; collecting = id; roi.classList.add('rec');
+  roi.style.setProperty('--k', cls(id).color);
+  document.querySelector(`.hold[data-id="${id}"]`)?.classList.add('on');
+}
+function stopHold(){
+  if(!collecting) return;
+  document.querySelector(`.hold[data-id="${collecting}"]`)?.classList.remove('on');
+  collecting = null; roi.classList.remove('rec'); renderClasses(); save();
+}
+
+/* ---------- predict loop ---------- */
+function paintBars(conf, top){
+  for(const c of classes){
+    const el = document.querySelector(`[data-bar="${c.id}"]`); if(!el) continue;
+    const v = conf[c.id]||0;
+    el.querySelector('.tr div').style.width = (v*100).toFixed(1)+'%';
+    el.querySelector('em').textContent = Math.round(v*100)+'%';
+  }
+}
+function verdict(id, conf){
+  const {thr} = cfg(); const tag = $('#tag');
+  if(!id){$('#vName').textContent='대기';$('#vName').style.color='';$('#vConf').textContent='';tag.classList.remove('on');roi.style.setProperty('--k','#ffffff');return}
+  const c = cls(id);
+  if(conf < thr){
+    $('#vName').textContent='판정 보류'; $('#vName').style.color='var(--mute)';
+    $('#vConf').textContent=Math.round(conf*100)+'%'; tag.classList.remove('on');
+    if(!collecting) roi.style.setProperty('--k','#ffffff'); return;
+  }
+  $('#vName').textContent=c.name; $('#vName').style.color=id==='bg'?'var(--mute)':c.color;
+  $('#vConf').textContent=Math.round(conf*100)+'%';
+  if(!collecting){
+    roi.style.setProperty('--k', id==='bg' ? '#ffffff' : c.color);
+    tag.textContent = c.name+' '+Math.round(conf*100)+'%';
+    tag.classList.toggle('on', id!=='bg');
+  }
+}
+function track(id, conf){
+  const {thr, stab} = cfg();
+  const lab = (id && conf >= thr) ? id : null;
+  if(lab === streakLabel) streak++; else { streakLabel = lab; streak = 1; }
+  if(streak < stab) return;
+  if(lab && lab !== 'bg'){ if(loggedLabel !== lab){ loggedLabel = lab; logHit(lab, conf); } }
+  else loggedLabel = null;
+}
+function logHit(id, conf){
+  const c = cls(id); tally[id] = (tally[id]||0)+1; renderTally();
+  const strip = $('#strip'); strip.querySelector('.empty')?.remove();
+  const d = document.createElement('div'); d.className='shot'; d.style.setProperty('--k', c.color);
+  const t = new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  d.innerHTML = `<img src="${snap(96)}" alt="${esc(c.name)} 감지 캡처"><b>${esc(c.name)}</b><span>${t} ${Math.round(conf*100)}%</span>`;
+  strip.prepend(d); while(strip.children.length>40) strip.lastChild.remove();
+  roi.classList.remove('hit'); void roi.offsetWidth; roi.classList.add('hit');
+}
+
+async function loop(){
+  requestAnimationFrame(loop);
+  if(!net || paused || busy || !video.videoWidth) return;
+  busy = true;
+  const t0 = performance.now();
+  try{
+    if(collecting){
+      if(t0 - lastAdd > 95){ lastAdd = t0; await addSample(collecting); }
+    }else if(ready() && grab()){
+      const emb = tf.tidy(()=>net.infer(crop, true));
+      const res = await knn.predictClass(emb, Math.min(cfg().k, total())); emb.dispose();
+      const a = 1 - cfg().sm;
+      for(const c of classes){ const v = res.confidences[c.id]||0; ema[c.id] = ema[c.id]==null ? v : ema[c.id]*(1-a) + v*a; }
+      let top = null, best = -1; for(const c of classes){ if((ema[c.id]||0) > best){best = ema[c.id]; top = c.id} }
+      paintBars(ema, top); verdict(top, best); track(top, best);
+      $('#vNote').textContent = '';
+    }else if(!ready()){
+      verdict(null); paintBars({});
+      $('#vNote').textContent = '두 개 이상 클래스에 샘플을 모으면 판정을 시작합니다. 배경 클래스부터 채우는 것을 권장합니다.';
+    }
+  }catch(e){ console.error(e) }
+  $('#ms').textContent = Math.round(performance.now()-t0);
+  frames++; const now = performance.now();
+  if(now - fpsT > 1000){ $('#fps').textContent = Math.round(frames*1000/(now-fpsT)); frames = 0; fpsT = now; }
+  busy = false;
+}
+
+/* ---------- persistence ---------- */
+function b64(f32){let s='',u=new Uint8Array(f32.buffer);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function unb64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Float32Array(u.buffer)}
+function serialize(){
+  const ds = knn.getClassifierDataset(), data = {};
+  for(const id in ds){ const t = ds[id]; data[id] = {shape:t.shape, data:b64(t.dataSync())} }
+  return {version:1, model:'mobilenet_v2_1.0', created:new Date().toISOString(), classes:classes.map(({id,name,desc,color,custom})=>({id,name,desc,color,custom})), data};
+}
+function restore(obj){
+  if(!obj || !obj.data) throw new Error('형식이 맞지 않습니다');
+  knn.clearAllClasses(); for(const k in counts) delete counts[k];
+  if(Array.isArray(obj.classes) && obj.classes.length) classes = obj.classes.map(c=>({id:String(c.id),name:String(c.name),desc:String(c.desc||''),color:/^(#[0-9a-f]{3,8}|var\(--c-[a-z]+\))$/i.test(c.color)?c.color:EXTRA[0],custom:!!c.custom}));
+  const ds = {};
+  for(const id in obj.data){ const d = obj.data[id]; ds[id] = tf.tensor2d(unb64(d.data), d.shape); counts[id] = d.shape[0]; if(!cls(id)) classes.push({id, name:id, desc:'', color:EXTRA[classes.length%EXTRA.length], custom:true}); }
+  knn.setClassifierDataset(ds);
+  for(const k in thumbs) delete thumbs[k]; ema = {};
+}
+let saveT;
+function save(){
+  clearTimeout(saveT);
+  saveT = setTimeout(()=>{
+    try{ localStorage.setItem(STORE, JSON.stringify(serialize())); $('#saveNote').textContent = `샘플 ${total()}장이 이 브라우저에 저장되어 있습니다.`; }
+    catch(e){ $('#saveNote').textContent = '브라우저 저장 공간이 부족합니다. JSON으로 내보내 보관하세요.'; }
+  }, 400);
+}
+
+/* ---------- events ---------- */
+const list = $('#classList');
+list.addEventListener('pointerdown', e=>{const b=e.target.closest('.hold'); if(!b) return; e.preventDefault(); b.setPointerCapture(e.pointerId); startHold(b.dataset.id)});
+list.addEventListener('pointerup', stopHold); list.addEventListener('pointercancel', stopHold);
+list.addEventListener('lostpointercapture', stopHold);
+list.addEventListener('click', e=>{
+  const r = e.target.closest('[data-reset]'), d = e.target.closest('[data-del]');
+  if(r){ const id=r.dataset.reset; if(counts[id]){ knn.clearClass(id); } counts[id]=0; thumbs[id]=[]; ema={}; renderClasses(); save(); }
+  if(d){ const id=d.dataset.del; if(counts[id]) knn.clearClass(id); delete counts[id]; classes = classes.filter(c=>c.id!==id); ema={}; renderClasses(); save(); }
+});
+list.addEventListener('keydown', e=>{const b=e.target.closest('.hold'); if(b && (e.key===' '||e.key==='Enter') && !e.repeat){e.preventDefault(); startHold(b.dataset.id)}});
+list.addEventListener('keyup', e=>{if(e.key===' '||e.key==='Enter') stopHold()});
+
+document.addEventListener('keydown', e=>{
+  if(e.target.matches('input,select,textarea') || e.repeat) return;
+  if(/^[1-9]$/.test(e.key) && classes[+e.key-1]){ startHold(classes[+e.key-1].id); }
+  else if(e.key===' ' && !e.target.closest('button')){ e.preventDefault(); togglePause(); }
+});
+document.addEventListener('keyup', e=>{ if(/^[1-9]$/.test(e.key)) stopHold(); });
+window.addEventListener('blur', stopHold);
+
+function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', paused); $('#pauseBtn').firstChild.textContent = paused ? '재개 ' : '일시정지 '; paused ? video.pause() : video.play(); }
+$('#pauseBtn').addEventListener('click', togglePause);
+$('#mirrorBtn').addEventListener('click', e=>{ const on = view.classList.toggle('mirror'); e.currentTarget.setAttribute('aria-pressed', on); });
+$('#camSel').addEventListener('change', e=>startCam(e.target.value));
+$('#retry').addEventListener('click', ()=>startCam($('#camSel').value||undefined));
+$('#roiSize').addEventListener('input', layoutRoi);
+new ResizeObserver(layoutRoi).observe(view);
+for(const [id,fmt] of [['thr',v=>v+'%'],['stab',v=>v],['kVal',v=>v],['smooth',v=>v+'%']]){
+  const out = $('#'+(id==='kVal'?'kOut':id+'Out')); $('#'+id).addEventListener('input', e=>out.textContent=fmt(e.target.value));
+}
+$('#clearLog').addEventListener('click', ()=>{ for(const k in tally) delete tally[k]; renderTally(); $('#strip').innerHTML='<span class="empty">같은 판정이 안정적으로 이어지면 여기에 캡처가 남습니다.</span>'; loggedLabel=null; });
+$('#addForm').addEventListener('submit', e=>{
+  e.preventDefault(); const name = $('#addName').value.trim(); if(!name) return;
+  const n = classes.filter(c=>c.custom).length;
+  classes.push({id:'c'+Date.now().toString(36), name, desc:'', color:EXTRA[n%EXTRA.length], custom:true});
+  $('#addName').value=''; renderClasses(); save();
+});
+$('#exportBtn').addEventListener('click', ()=>{
+  if(!total()){ $('#saveNote').textContent='내보낼 샘플이 없습니다. 먼저 샘플을 수집하세요.'; return; }
+  const blob = new Blob([JSON.stringify(serialize())], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `kkongjup-samples-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  $('#saveNote').textContent = `샘플 ${total()}장을 내보냈습니다.`;
+});
+$('#importBtn').addEventListener('click', ()=>$('#importFile').click());
+$('#importFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{ restore(JSON.parse(await f.text())); renderClasses(); save(); $('#saveNote').textContent = `${f.name}에서 샘플 ${total()}장을 불러왔습니다.`; }
+  catch(err){ $('#saveNote').textContent = '불러오지 못했습니다. 이 페이지에서 내보낸 JSON 파일인지 확인하세요.'; }
+  e.target.value='';
+});
+let armT;
+$('#wipeBtn').addEventListener('click', e=>{
+  const b = e.currentTarget;
+  if(!b.classList.contains('arm')){ b.classList.add('arm'); b.textContent='한 번 더 누르면 삭제'; armT=setTimeout(()=>{b.classList.remove('arm');b.textContent='전체 샘플 삭제'},3000); return; }
+  clearTimeout(armT); b.classList.remove('arm'); b.textContent='전체 샘플 삭제';
+  knn.clearAllClasses(); for(const k in counts) delete counts[k]; for(const k in thumbs) delete thumbs[k]; ema={};
+  try{localStorage.removeItem(STORE)}catch(_){}
+  renderClasses(); $('#saveNote').textContent='모든 샘플을 삭제했습니다.';
+});
+
+/* ---------- boot ---------- */
+renderClasses();
+startCam();
+(async()=>{
+  try{
+    if(typeof tf==='undefined' || typeof mobilenet==='undefined') throw new Error('lib');
+    await tf.ready();
+    knn = knnClassifier.create();
+    try{ net = await mobilenet.load({version:2, alpha:1.0}); }catch(_){ net = await mobilenet.load({version:1, alpha:1.0}); }
+    try{ const s = localStorage.getItem(STORE); if(s){ restore(JSON.parse(s)); renderClasses(); $('#saveNote').textContent=`저장된 샘플 ${total()}장을 불러왔습니다.`; } }catch(_){}
+    setStatus('준비됨 ('+tf.getBackend().toUpperCase()+')', 'ok');
+  }catch(e){
+    console.error(e); setStatus('모델 로드 실패', 'err');
+    $('#vNote').textContent='인식 모델을 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침하세요.';
+  }
+})();
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
