@@ -14,19 +14,19 @@
       "file": "butt-close-416.onnx",
       "imgsz": 416,
       "kind": "close",
-      "note": "CigWasteNet만 학습한 이전 모델. 바닥을 가까이서 내려다볼 때 더 정확"
+      "note": "CigWasteNet만 학습한 첫 모델. 바닥을 가까이서 내려다볼 때 더 정확"
     }
   ],
   "names": [
     "꽁초"
   ],
   "test": {
-    "precision": 0.9177,
-    "recall": 0.7139,
-    "map50": 0.8263,
-    "map50_95": 0.6007
+    "precision": 0.8883,
+    "recall": 0.6566,
+    "map50": 0.7537,
+    "map50_95": 0.495
   },
-  "dataset": "CigWasteNet (MIT) + TACO 담배꽁초 (CC BY 4.0)",
+  "dataset": "CigWasteNet + TACO + 직접 모은 사진",
   "base": "yolo11n",
-  "trained_at": "2026-11-25T09:41Z"
+  "trained_at": "2026-11-25T13:09Z"
 }
