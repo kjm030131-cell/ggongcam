@@ -363,6 +363,15 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
         <p class="hint" id="dsNote" style="margin:10px 0 0"></p>
         <div class="grid" id="dsGrid"></div>
       </div>
+      <div class="sec">
+        <h2>학습 데이터로 보내기</h2>
+        <p class="hint">찍은 사진을 버튼 한 번으로 학습 저장소에 넣습니다. 새 사진이 들어온 날은 새벽 2시에 모델이 다시 학습돼 다음 날 아침 사이트에 반영됩니다.</p>
+        <div class="stat" style="grid-template-columns:repeat(2,1fr)"><div><span>안 보낸 사진</span><b id="upN">0</b></div><div><span>보낸 사진</span><b id="upDone">0</b></div></div>
+        <div class="field"><label for="upAuto">저장하면 바로 보내기</label><span class="switch"><input type="checkbox" id="upAuto" aria-label="저장하면 바로 보내기"><i></i></span></div>
+        <div class="field"><label for="upCode">업로드 비밀번호</label><input type="text" id="upCode" autocomplete="off" placeholder="처음 한 번만" style="width:170px"></div>
+        <div class="row" style="margin-top:4px"><button class="btn pri" id="upBtn" type="button">안 보낸 사진 보내기</button></div>
+        <p class="hint" id="upNote" style="margin:10px 0 0"></p>
+      </div>
     </div>
 
     <div class="panel" id="p-sub" role="tabpanel">
@@ -907,11 +916,13 @@ async function capture(s, reason){
   ds.push(d); paintDs();
   try{ await idb.put(d); }catch(e){ $('#dsNote').textContent = '기기 저장 공간에 넣지 못했습니다. 새로고침 전에 ZIP으로 내보내세요.'; }
   if(reason!=='auto'){ toast('저장했습니다 (박스 '+labels.length+'개)'); if(navigator.vibrate) navigator.vibrate(25); }
+  if($('#upAuto')?.checked) uploadPending(true);
 }
 function paintDs(){
   $('#dsN').textContent = ds.length; $('#dsB').textContent = ds.reduce((a,d)=>a+d.labels.length,0); $('#dsE').textContent = ds.filter(d=>!d.labels.length).length;
-  $('#dsGrid').innerHTML = ds.slice(-24).reverse().map(d=>`<figure><button type="button" data-ed="${esc(d.name)}" aria-label="박스 고치기"><img src="${d.thumb}" alt=""></button><figcaption>${d.labels.length}${d.edited?' 확인':''}</figcaption></figure>`).join('');
+  $('#dsGrid').innerHTML = ds.slice(-24).reverse().map(d=>`<figure><button type="button" data-ed="${esc(d.name)}" aria-label="박스 고치기"><img src="${d.thumb}" alt=""></button><figcaption>${d.labels.length}${d.edited?' 확인':''}${d.uploaded?' 보냄':''}</figcaption></figure>`).join('');
   const fc = $('#fabCount'); if(fc) fc.textContent = ds.length;
+  if(typeof paintUp==='function') paintUp();
 }
 function maybeAutoCap(s, now){
   const sec = num('autoCap'); if(!sec || now - lastCap < sec*1000) return;
@@ -933,6 +944,36 @@ async function exportZip(){
   setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
   $('#dsNote').textContent = `사진 ${ds.length}장을 ZIP으로 내보냈습니다.`;
 }
+/* 학습 저장소로 보내기 */
+let uploading = false;
+const blobB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(b); });
+function paintUp(){ $('#upN').textContent = ds.filter(d=>!d.uploaded).length; $('#upDone').textContent = ds.filter(d=>d.uploaded).length; }
+async function uploadPending(quiet){
+  if(uploading) return; const code = $('#upCode').value.trim();
+  if(!code){ $('#upNote').textContent = '업로드 비밀번호를 먼저 넣으세요.'; if(!quiet) $('#upCode').focus(); return; }
+  const todo = ds.filter(d=>!d.uploaded); if(!todo.length){ if(!quiet) $('#upNote').textContent = '보낼 사진이 없습니다.'; return; }
+  uploading = true; $('#upBtn').disabled = true; let sent = 0;
+  try{
+    for(let i=0; i<todo.length; i+=8){
+      const batch = todo.slice(i, i+8);
+      $('#upNote').textContent = `보내는 중 ${sent}/${todo.length}`;
+      const items = []; for(const d of batch) items.push({name:d.name, jpg: await blobB64(d.blob), labels:d.labels});
+      const r = await fetch('api/upload', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({code, device: /iPhone|Android/i.test(navigator.userAgent) ? (navigator.userAgent.match(/iPhone|Android/i)[0]) : 'PC', items})});
+      const j = await r.json().catch(()=>({error:'서버 응답을 읽지 못했습니다.'}));
+      if(!r.ok || !j.ok) throw new Error(j.error || ('서버 오류 '+r.status));
+      for(const d of batch){ d.uploaded = true; try{ await idb.put(d); }catch(_){} }
+      sent += batch.length; paintUp();
+    }
+    $('#upNote').textContent = `${sent}장을 보냈습니다. 새벽 2시 학습에 들어갑니다.`; if(!quiet) toast(sent+'장 보냈습니다');
+  }catch(e){ $('#upNote').textContent = (sent ? sent+'장 보낸 뒤 멈췄습니다. ' : '') + e.message; }
+  finally{ uploading = false; $('#upBtn').disabled = false; paintDs(); }
+}
+$('#upBtn').addEventListener('click', ()=>uploadPending(false));
+$('#upCode').addEventListener('change', ()=>{ try{ localStorage.setItem(KEY+'-up', $('#upCode').value.trim()); }catch(_){} });
+$('#upAuto').addEventListener('change', ()=>{ try{ localStorage.setItem(KEY+'-upauto', $('#upAuto').checked ? '1' : ''); }catch(_){} if($('#upAuto').checked) uploadPending(true); });
+try{ $('#upCode').value = localStorage.getItem(KEY+'-up') || ''; $('#upAuto').checked = !!localStorage.getItem(KEY+'-upauto'); }catch(_){}
+fetch('api/upload').then(r=>r.json()).then(j=>{ if(!j.ready) $('#upNote').textContent = '서버 설정이 아직 안 됐습니다. 설정이 끝나면 쓸 수 있습니다.'; }).catch(()=>{});
+
 /* 박스 편집기 */
 let ed = null;
 const edc = () => $('#edCanvas');
@@ -1033,7 +1074,7 @@ edc().addEventListener('pointerup', ()=>{ if(!ed || !ed.drag) return; const b = 
 $('#edDel').addEventListener('click', ()=>{ if(ed && ed.sel>=0){ ed.boxes.splice(ed.sel,1); ed.sel = -1; edDraw(); } });
 $('#edClear').addEventListener('click', ()=>{ if(ed){ ed.boxes = []; ed.sel = -1; edDraw(); } });
 $('#edClose').addEventListener('click', closeEditor);
-$('#edSave').addEventListener('click', async ()=>{ if(!ed) return; const d = ed.d; d.labels = ed.boxes.map(b=>[b.x+b.w/2, b.y+b.h/2, b.w, b.h]); d.edited = true; try{ await idb.put(d); }catch(_){} paintDs(); closeEditor(); toast('박스를 저장했습니다'); });
+$('#edSave').addEventListener('click', async ()=>{ if(!ed) return; const d = ed.d; d.labels = ed.boxes.map(b=>[b.x+b.w/2, b.y+b.h/2, b.w, b.h]); d.edited = true; d.uploaded = false; try{ await idb.put(d); }catch(_){} paintDs(); closeEditor(); toast('박스를 저장했습니다'); });
 $('#edRemove').addEventListener('click', async ()=>{ if(!ed) return; const n = ed.d.name; ds = ds.filter(x=>x.name!==n); try{ await idb.del(n); }catch(_){} paintDs(); closeEditor(); toast('사진을 지웠습니다'); });
 window.addEventListener('resize', ()=>{ if(ed) edDraw(); });
 $('#capBtn2').addEventListener('click', ()=>capture(src()));

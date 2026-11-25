@@ -1,5 +1,5 @@
 # 꽁초 감지 모델 학습 → public/models/butt.onnx 커밋 → Pages 자동 배포
-# 실행: Actions 탭에서 "train" 수동 실행, 또는 training/ 폴더를 바꿔서 main 에 push
+# 실행: Actions 탭에서 "train" 수동 실행, training/ 을 바꿔서 push, 또는 매일 새벽 2시(새 사진이 있을 때만)
 name: train
 on:
   workflow_dispatch:
@@ -9,45 +9,62 @@ on:
         default: "4.5"
   push:
     branches: [main]
-    paths: ["training/**", "data/extra/**"]
+    paths: ["training/**"]
+  schedule:
+    - cron: "0 17 * * *"   # 매일 새벽 2시(한국): 폰에서 새 사진이 들어왔을 때만 학습
 permissions:
   contents: write
 concurrency:
   group: train
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 jobs:
   train:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: check new data
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "run=1" >> $GITHUB_OUTPUT; exit 0; fi
+          D=$(git log -1 --format=%ct -- data/extra || echo 0); M=$(git log -1 --format=%ct -- public/models/butt.json || echo 0)
+          if [ "${D:-0}" -gt "${M:-0}" ]; then echo "run=1" >> $GITHUB_OUTPUT; echo "새 사진 있음"; else echo "run=0" >> $GITHUB_OUTPUT; echo "새 사진 없음: 건너뜀"; fi
       - uses: actions/setup-python@v5
+        if: steps.check.outputs.run == '1'
         with: { python-version: "3.11" }
       - name: install
+        if: steps.check.outputs.run == '1'
         run: |
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install ultralytics onnx onnxslim onnxruntime pillow
       - name: dataset (CigWasteNet, MIT)
+        if: steps.check.outputs.run == '1'
         run: |
           git clone --depth 1 https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection /tmp/cig
           python training/prepare.py /tmp/cig/dataset/CigWasteNet.yolov8-obb /tmp/butt
       - name: dataset (TACO cigarettes)
+        if: steps.check.outputs.run == '1'
         run: |
           git clone --depth 1 https://github.com/pedropro/TACO /tmp/taco
           python training/prepare_taco.py /tmp/taco /tmp/butt
       - name: dataset (Roboflow, 키가 있을 때만)
+        if: steps.check.outputs.run == '1'
         env:
           ROBOFLOW_API_KEY: ${{ secrets.ROBOFLOW_API_KEY }}
         run: |
           pip install roboflow pyyaml
           python training/prepare_roboflow.py /tmp/butt
       - name: dataset (직접 모은 사진 data/extra)
+        if: steps.check.outputs.run == '1'
         run: python training/prepare_extra.py data/extra /tmp/butt
       - name: train
+        if: steps.check.outputs.run == '1'
         env:
           HAS_RF: ${{ secrets.ROBOFLOW_API_KEY != '' && '1' || '' }}
         run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '4.5' }}"
       - name: commit model
+        if: steps.check.outputs.run == '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

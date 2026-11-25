@@ -46,7 +46,9 @@ git push               # main 에 push 하면 Cloudflare Pages 가 자동 배포
 - 데이터 1: [CigWasteNet](https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection) (MIT). 대학 캠퍼스 바닥의 꽁초를 위에서 가까이 찍은 사진 2,000장(학습 1,508 / 검증 392 / 테스트 100), 사진마다 꽁초 1개. 회전 박스를 일반 박스로 바꿔 꽁초 한 클래스로 학습 (`training/prepare.py`).
 - 데이터 2: [TACO](https://github.com/pedropro/TACO) 의 Cigarette 클래스. 길거리 쓰레기를 서서 찍은 사진 중 꽁초가 있는 432장(꽁초 1,158개)과 꽁초 없는 사진 500장. 긴 변 1280으로 줄여 640 조각으로 자르고 꽁초 든 조각과 음성 조각을 더한다 (`training/prepare_taco.py`). 저장소 코드는 MIT, 사진은 장마다 Flickr CC 또는 OpenLitterMap ODbL 이라 상업적으로 쓸 때는 사진별 라이선스를 따로 확인해야 한다.
 - 데이터 3 (선택): Roboflow Universe 공개 꽁초 데이터셋 10개(전자담배 스틱 포함). 저장소 Secrets 에 `ROBOFLOW_API_KEY`(무료 계정 키)가 있을 때만 받는다 (`training/prepare_roboflow.py`). 데이터셋마다 라이선스가 다르다(대부분 CC BY 4.0).
-- 데이터 4: 직접 모은 사진. 데이터 탭에서 내보낸 ZIP을 `data/extra/` 에 올리면 자동으로 학습이 다시 돈다 (`training/prepare_extra.py`).
+- 데이터 4: 직접 모은 사진. 폰 데이터 탭의 "보내기"(또는 저장하면 바로 보내기)로 `data/extra/phone/날짜/` 에 바로 커밋된다 (`functions/api/upload.js`, Cloudflare Pages Function). ZIP을 `data/extra/` 에 직접 올려도 된다 (`training/prepare_extra.py`).
+- 학습 시점: `training/` 을 바꿔 push 하거나 Actions 에서 수동 실행, 그리고 매일 새벽 2시(한국)에 `data/extra` 에 새 사진이 들어온 경우에만.
+- 업로드 서버 설정(한 번): Cloudflare Pages 프로젝트 ggongcam 의 Settings → Variables and Secrets 에 `GH_TOKEN`(이 저장소 Contents 읽기/쓰기만 허용한 fine-grained 토큰)과 `UPLOAD_CODE`(업로드 비밀번호)를 Secret 으로 넣고 다시 배포.
 - 학습은 이전 결과(`training/weights/butt.pt`)에서 이어서 한다.
 - 학습: GitHub Actions `train` 워크플로가 CPU로 YOLO11n을 416px로 학습하고 ONNX로 내보내 `public/models/` 에 커밋한다. 커밋되면 Pages가 자동 배포.
 - 다시 학습: Actions 탭에서 train 을 수동 실행하거나 `training/` 을 고쳐 push.
@@ -58,6 +60,8 @@ git push               # main 에 push 하면 Cloudflare Pages 가 자동 배포
 
 ```
 robot/                 ESP32 시리얼 수신, 라즈베리파이 WebSocket 수신 예제
+functions/api/upload.js 폰 사진을 data/extra 로 커밋하는 Pages Function
+data/extra/            직접 모은 학습 사진
 public/index.html      페이지 전체 (마크업, 스타일, 감지, 로봇 링크, 데이터셋)
 public/models/         감지 모델 butt.onnx + butt.json (Actions가 생성)
 training/              데이터 변환, 학습 스크립트
