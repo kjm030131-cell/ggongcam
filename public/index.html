@@ -479,6 +479,8 @@ const ORT = 'vendor/ort-1.20.1/';
 const loadScript = src => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('script')); document.head.appendChild(el); });
 let detEP = 'wasm', detVariant = null;
 async function gpuOK(){ try{ return !!(navigator.gpu && await navigator.gpu.requestAdapter()); }catch(_){ return false; } }
+// 모델마다 확신도를 매기는 버릇이 달라서, 학습 때 검증셋으로 구한 권장 기준(rec)을 50%에 맞춘다.
+function confFor(){ const rec = (detVariant && detVariant.conf) || 0.5; const v = num('conf')/100; return Math.min(0.95, Math.max(0.05, v * rec / 0.5)); }
 function pickVariant(){
   const all = detInfo.variants && detInfo.variants.length ? detInfo.variants : [{file: detInfo.file||'butt.onnx', imgsz: detInfo.imgsz}];
   const close = all.find(v=>v.kind==='close'), vs = all.filter(v=>v.kind!=='close');
@@ -1024,7 +1026,7 @@ async function infer(s){
   busy = true; const t0 = performance.now();
   try{
     if(detState==='ok'){
-      const dets = await detect(s, num('conf')/100);
+      const dets = await detect(s, confFor());
       const nb = updateTracks(dets);
       for(const b of nb) b.t = telemetry(s, b);
       boxes = nb; target = pickTarget(s, boxes);

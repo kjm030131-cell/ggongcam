@@ -58,6 +58,9 @@ jobs:
       - name: dataset (직접 모은 사진 data/extra)
         if: steps.check.outputs.run == '1'
         run: python training/prepare_extra.py data/extra /tmp/butt
+      - name: dataset (한국 스틱 합성, data/extra/cutouts)
+        if: steps.check.outputs.run == '1'
+        run: python training/prepare_synth.py data/extra/cutouts /tmp/butt 1500
       - name: train
         if: steps.check.outputs.run == '1'
         env:
@@ -68,6 +71,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f /tmp/no_publish ]; then echo "새 모델이 기존보다 나빠서 반영 안 함: $(cat /tmp/no_publish)"; exit 0; fi
           git add public/models/ training/weights/
           MAP=$(python -c "import json;print(json.load(open('public/models/butt.json'))['test']['map50'])")
           git commit -m "꽁초 감지 모델 학습 결과 (test mAP50 ${MAP})" || exit 0
