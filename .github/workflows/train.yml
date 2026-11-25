@@ -6,7 +6,7 @@ on:
     inputs:
       hours:
         description: "학습 시간 상한(시간)"
-        default: "1.25"
+        default: "2.3"
   push:
     branches: [main]
     paths: ["training/**"]
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,18 +26,22 @@ jobs:
       - name: install
         run: |
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install ultralytics onnx onnxslim onnxruntime
+          pip install ultralytics onnx onnxslim onnxruntime pillow
       - name: dataset (CigWasteNet, MIT)
         run: |
           git clone --depth 1 https://github.com/KabirAhmad4/Intelligent-Cigarette-Butt-Detection-and-Localization-Using-YOLOv8-Detection /tmp/cig
           python training/prepare.py /tmp/cig/dataset/CigWasteNet.yolov8-obb /tmp/butt
+      - name: dataset (TACO cigarettes, CC BY 4.0)
+        run: |
+          git clone --depth 1 https://github.com/pedropro/TACO /tmp/taco
+          python training/prepare_taco.py /tmp/taco /tmp/butt
       - name: train
-        run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '1.25' }}"
+        run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '2.3' }}"
       - name: commit model
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/models/butt.onnx public/models/butt.json
+          git add public/models/ training/weights/
           MAP=$(python -c "import json;print(json.load(open('public/models/butt.json'))['test']['map50'])")
           git commit -m "꽁초 감지 모델 학습 결과 (test mAP50 ${MAP})" || exit 0
           git pull --rebase origin main
