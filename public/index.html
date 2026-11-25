@@ -295,7 +295,7 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
       <div class="sec">
         <h2>감지 설정</h2>
         <div class="field"><label>감도</label>
-          <div class="seg" role="group" aria-label="감도" id="sens"><button type="button" data-v="60">낮음</button><button type="button" data-v="40">보통</button><button type="button" data-v="25">높음</button></div></div>
+          <div class="seg" role="group" aria-label="감도" id="sens"><button type="button" data-v="65">낮음</button><button type="button" data-v="50">보통</button><button type="button" data-v="35">높음</button></div></div>
         <div class="field"><label>감지 범위</label>
           <div class="seg" role="group" aria-label="감지 범위" id="regionSeg"><button type="button" data-v="full">전체</button><button type="button" data-v="zoom">가운데 확대</button><button type="button" data-v="tile">정밀</button></div></div>
         <input type="hidden" id="region" value="full">
@@ -303,7 +303,8 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
         <div class="field arm-only"><label for="policy">목표 고르기</label><select id="policy"><option value="near">기준점에 가까운 것</option><option value="conf">가장 확실한 것</option><option value="big">가장 큰 것</option></select></div>
         <details>
           <summary>고급 설정</summary>
-          <div class="field range"><label for="conf">신뢰도 기준</label><output id="confOut"></output><input type="range" id="conf" min="10" max="90" value="40"></div>
+          <div class="field range"><label for="conf">신뢰도 기준</label><output id="confOut"></output><input type="range" id="conf" min="10" max="90" value="50"></div>
+          <div class="field"><label for="showTentative">확정 전 후보도 표시</label><span class="switch"><input type="checkbox" id="showTentative" aria-label="확정 전 후보도 표시"><i></i></span></div>
           <div class="field range"><label for="iou">겹친 박스 합치기 (IoU)</label><output id="iouOut"></output><input type="range" id="iou" min="20" max="80" value="45"></div>
           <div class="field range"><label for="stab">목표 확정까지 프레임</label><output id="stabOut"></output><input type="range" id="stab" min="1" max="30" value="6"></div>
           <div class="field"><label for="modelSize">모델 크기</label><select id="modelSize"><option value="auto">자동</option><option value="fast">빠르게</option><option value="accurate">정확하게</option><option value="close">가까이 전용 (이전 모델)</option></select></div>
@@ -435,8 +436,8 @@ const SET_IDS = ['region','modelSize','conf','iou','stab','policy','fieldMm','zo
 let mirrorPref = {}, facing = 'user';
 function setMirror(v){ view.classList.toggle('mirror', v); $('#mirrorBtn').setAttribute('aria-pressed', String(v)); }
 function applyMirror(){ const v = mirrorPref[facing]; setMirror(v==null ? facing!=='environment' : v); }
-function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; mirrorPref = s.mirrorPref || {}; if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
-function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirrorPref = mirrorPref; s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
+function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); if((s.v||0) < 2) delete s.conf; for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; mirrorPref = s.mirrorPref || {}; if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
+function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirrorPref = mirrorPref; s.v = 2; s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
 const on = sel => $(sel).getAttribute('aria-pressed') === 'true';
 const num = id => +$('#'+id).value;
 const OUTS = {conf:v=>v+'%', iou:v=>v+'%', stab:v=>v, zoneY:v=>v+'%', zoneW:v=>v+'%', zoneH:v=>v+'%', thr:v=>v+'%', kVal:v=>v};
@@ -972,7 +973,8 @@ function updateTracks(dets){
   }
   dets.forEach((d,i)=>{ if(!used.has(i)) tracks.push({id:nextId++, box:{x:d.x,y:d.y,w:d.w,h:d.h}, score:d.score, hits:1, miss:0}); });
   tracks = tracks.filter(t => t.miss <= (t.hits >= lockN() ? 8 : 1));
-  return tracks.filter(t => t.hits >= 2 && t.miss <= 3).map(t => ({...t.box, score:t.score, id:t.id, track:t, locked:t.hits >= lockN(), lockedAt:t.lockedAt, sub:t.sub, subConf:t.subConf}));
+  const minHits = $('#showTentative')?.checked ? 2 : lockN();
+  return tracks.filter(t => t.hits >= minHits && t.miss <= 3).map(t => ({...t.box, score:t.score, id:t.id, track:t, locked:t.hits >= lockN(), lockedAt:t.lockedAt, sub:t.sub, subConf:t.subConf}));
 }
 
 /* ---------- main loop ---------- */

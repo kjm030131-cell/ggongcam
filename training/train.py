@@ -6,7 +6,8 @@ from pathlib import Path
 from ultralytics import YOLO
 
 data, outdir = sys.argv[1], Path(sys.argv[2])
-DATASET = "CigWasteNet (MIT) + TACO 담배꽁초 (사진별 CC, ODbL)"
+import os
+DATASET = "CigWasteNet + TACO" + (" + Roboflow 꽁초 데이터" if os.environ.get("HAS_RF") else "") + (" + 직접 모은 사진" if any(Path("data/extra").rglob("*.zip")) or any(Path("data/extra").rglob("*.jpg")) else "")
 IMGSZ = 512
 HOURS = float(sys.argv[3]) if len(sys.argv) > 3 else 4.5
 

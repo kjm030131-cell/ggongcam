@@ -9,7 +9,7 @@ on:
         default: "4.5"
   push:
     branches: [main]
-    paths: ["training/**"]
+    paths: ["training/**", "data/extra/**"]
 permissions:
   contents: write
 concurrency:
@@ -35,7 +35,17 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/pedropro/TACO /tmp/taco
           python training/prepare_taco.py /tmp/taco /tmp/butt
+      - name: dataset (Roboflow, 키가 있을 때만)
+        env:
+          ROBOFLOW_API_KEY: ${{ secrets.ROBOFLOW_API_KEY }}
+        run: |
+          pip install roboflow pyyaml
+          python training/prepare_roboflow.py /tmp/butt
+      - name: dataset (직접 모은 사진 data/extra)
+        run: python training/prepare_extra.py data/extra /tmp/butt
       - name: train
+        env:
+          HAS_RF: ${{ secrets.ROBOFLOW_API_KEY != '' && '1' || '' }}
         run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '4.5' }}"
       - name: commit model
         run: |
