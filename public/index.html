@@ -171,6 +171,19 @@ details[open] summary{margin-bottom:12px}
 .help dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:14px 0 0;font-size:13px}
 .help dd{margin:0;color:var(--ink2)}
 
+/* modes */
+.mode{margin-left:6px}
+body.watch .arm-only{display:none!important}
+body:not(.watch) .watch-only{display:none!important}
+body.watch .bottom{grid-template-columns:minmax(0,1fr)}
+.big{font-size:44px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.big small{font-size:15px;color:var(--mute);font-weight:500;margin-left:4px;letter-spacing:0}
+.types{margin-top:16px;display:grid;gap:10px}
+.ty{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.ty i{width:8px;height:8px;border-radius:50%;background:var(--k)}
+.ty .bar{grid-column:2/4;height:4px;border-radius:2px;background:var(--s3);overflow:hidden;margin-top:-4px}
+.ty .bar div{height:100%;background:var(--k);width:0;transition:width .2s}
+.ty b{font-weight:600}
 @media(max-width:1000px){
   .app{display:flex;flex-direction:column;height:auto}
   .stage{display:contents}
@@ -186,11 +199,13 @@ details[open] summary{margin-bottom:12px}
 <header class="top">
   <div class="brand">
     <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="6" width="16" height="6" rx="3" fill="none" stroke="#ededee" stroke-width="1.4"/><rect x="1" y="6" width="6" height="6" rx="3" fill="#ededee"/></svg>
-    꽁줍이 비전 <span class="src" id="srcBadge">카메라</span>
+    꽁줍이 비전
+    <div class="seg mode" role="group" aria-label="모드"><button type="button" data-mode="watch" aria-pressed="true">감지</button><button type="button" data-mode="arm" aria-pressed="false">로봇팔</button></div>
+    <span class="src" id="srcBadge">카메라</span>
   </div>
   <div class="status">
     <span class="st wait" id="stModel"><i></i><span>감지 모델 불러오는 중</span></span>
-    <span class="st" id="stLink"><i></i><span>로봇 연결 안 됨</span></span>
+    <span class="st arm-only" id="stLink"><i></i><span>로봇 연결 안 됨</span></span>
     <span class="perf"><b id="fps">0</b> fps &nbsp;<b id="ms">0</b> ms</span>
     <button class="btn ghost" id="helpBtn" type="button" aria-label="단축키 보기"><kbd>?</kbd></button>
   </div>
@@ -216,7 +231,7 @@ details[open] summary{margin-bottom:12px}
       <div class="push">
         <span class="lbl">표시</span>
         <div class="seg" role="group" aria-label="화면 표시">
-          <button type="button" id="zoneBtn" aria-pressed="true" title="Z">집기 영역</button>
+          <button type="button" id="zoneBtn" class="arm-only" aria-pressed="true" title="Z">집기 영역</button>
           <button type="button" id="gridBtn" aria-pressed="false" title="G">격자</button>
           <button type="button" id="mirrorBtn" aria-pressed="false" title="M">좌우 반전</button>
         </div>
@@ -228,7 +243,7 @@ details[open] summary{margin-bottom:12px}
         <div class="phead"><h2>감지 기록</h2><span id="evCount">0건</span><div class="r"><button class="btn ghost" id="evCsv" type="button">CSV 내보내기</button><button class="btn ghost" id="evClear" type="button">비우기</button></div></div>
         <div class="events" id="events"><span class="empty">목표가 잠깐 이상 유지되면 여기에 남습니다.</span></div>
       </div>
-      <div class="pane">
+      <div class="pane arm-only">
         <div class="phead"><h2>로봇 콘솔</h2><span id="txRate">보내지 않음</span><div class="r"><button class="btn ghost" id="conClear" type="button">비우기</button></div></div>
         <pre class="console" id="console" aria-live="off"></pre>
         <form class="sendrow" id="sendForm"><input id="sendIn" placeholder="명령 직접 보내기 (예: HOME)" aria-label="명령 직접 보내기" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
@@ -239,13 +254,18 @@ details[open] summary{margin-bottom:12px}
   <aside class="side">
     <div class="tabs" role="tablist">
       <button role="tab" id="t-det" aria-selected="true" aria-controls="p-det">감지</button>
-      <button role="tab" id="t-bot" aria-selected="false" aria-controls="p-bot">로봇</button>
+      <button role="tab" id="t-bot" class="arm-only" aria-selected="false" aria-controls="p-bot">로봇</button>
       <button role="tab" id="t-data" aria-selected="false" aria-controls="p-data">데이터</button>
       <button role="tab" id="t-sub" aria-selected="false" aria-controls="p-sub">종류</button>
     </div>
 
     <div class="panel on" id="p-det" role="tabpanel">
-      <div class="readout" aria-live="polite">
+      <div class="readout watch-only" aria-live="polite">
+        <div class="rtop"><span class="rname">화면 속 꽁초</span><span class="pill" id="sState">대기</span></div>
+        <div class="big" id="sTotal">0<small>개</small></div>
+        <div class="types" id="sTypes"></div>
+      </div>
+      <div class="readout arm-only" aria-live="polite">
         <div class="rtop"><span class="rname" id="rName"><b>대기</b></span><span class="pill" id="rZone">영역 밖</span></div>
         <div class="xy"><div><span>X (오른쪽 +)</span><b id="rX">-</b></div><div><span>Y (앞 +)</span><b id="rY">-</b></div></div>
         <p class="dir" id="rDir">목표 없음</p>
@@ -259,7 +279,7 @@ details[open] summary{margin-bottom:12px}
         <h2>감지 설정</h2>
         <div class="field"><label>감도</label>
           <div class="seg" role="group" aria-label="감도" id="sens"><button type="button" data-v="60">낮음</button><button type="button" data-v="40">보통</button><button type="button" data-v="25">높음</button></div></div>
-        <div class="field"><label for="policy">목표 고르기</label><select id="policy"><option value="near">기준점에 가까운 것</option><option value="conf">가장 확실한 것</option><option value="big">가장 큰 것</option></select></div>
+        <div class="field arm-only"><label for="policy">목표 고르기</label><select id="policy"><option value="near">기준점에 가까운 것</option><option value="conf">가장 확실한 것</option><option value="big">가장 큰 것</option></select></div>
         <details>
           <summary>고급 설정</summary>
           <div class="field range"><label for="conf">신뢰도 기준</label><output id="confOut"></output><input type="range" id="conf" min="10" max="90" value="40"></div>
@@ -385,6 +405,7 @@ function paintOutputs(){ for(const id in OUTS){ const o = $('#'+id+'Out'); if(o)
 
 /* ---------- state ---------- */
 const view = $('#view'), video = $('#video'), still = $('#still'), ov = $('#ov'), octx = ov.getContext('2d');
+let mode = 'watch';
 let stream = null, srcKind = 'cam', fileUrl = null, paused = false, busy = false;
 let det = null, detInfo = null, detState = 'loading';
 let boxes = [], target = null, streak = 0, streakKey = null, logged = false;
@@ -399,7 +420,7 @@ function src(){
 function fit(s){ const r = view.getBoundingClientRect(); const k = Math.min(r.width/s.w, r.height/s.h); return {k, dx:(r.width-s.w*k)/2, dy:(r.height-s.h*k)/2, W:r.width, H:r.height}; }
 function zoneRect(s){ const w = s.w*num('zoneW')/100, h = s.h*num('zoneH')/100, cx = s.w/2, cy = s.h*num('zoneY')/100; return {x:cx-w/2, y:cy-h/2, w, h, cx, cy}; }
 const mmPerPx = s => num('fieldMm') / (s.w || 1);
-function setSt(id, text, kind){ const c = $('#'+id); c.className = 'st' + (kind?' '+kind:''); c.querySelector('span').textContent = text; }
+function setSt(id, text, kind){ const c = $('#'+id); c.className = 'st' + (c.classList.contains('arm-only')?' arm-only':'') + (kind?' '+kind:''); c.querySelector('span').textContent = text; }
 let toastT; function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('on'), 1600); }
 function banner(t){ const b = $('#banner'); b.textContent = t||''; b.classList.toggle('on', !!t); }
 function showMsg(t){ $('#msgText').textContent = t; $('#msg').classList.toggle('on', !!t); }
@@ -457,6 +478,14 @@ function telemetry(s, b){
 }
 const sgn = v => { const r = Math.round(v); return r===0 ? '0' : (r>0?'+':'−') + Math.abs(r); };
 function paintReadout(s){
+  if(mode==='watch'){
+    $('#sTotal').innerHTML = boxes.length + '<small>개</small>';
+    const st = $('#sState'); st.textContent = detState==='ok' ? (boxes.length ? '감지 중' : '없음') : detState==='pending' ? '모델 학습 중' : '대기'; st.className = 'pill' + (boxes.length ? ' go' : '');
+    const rows = [{id:null, name: subReady() ? '종류 미정' : '꽁초', color:'#ededee'}, ...subs];
+    const cnt = id => boxes.filter(b => (b.sub||null) === id).length, mx = Math.max(1, boxes.length);
+    $('#sTypes').innerHTML = rows.filter(r => r.id===null || subReady()).map(r => { const c = cnt(r.id); return `<div class="ty" style="--k:${r.color}"><i></i><span>${esc(r.name)}</span><b>${c}</b><div class="bar"><div style="width:${c/mx*100}%"></div></div></div>`; }).join('')
+      + (subReady() ? '' : '<p class="hint" style="margin:4px 0 0">종류 탭에서 샘플을 모으면 일반, 얇은, 전자담배 스틱별로 나눠 셉니다.</p>');
+  }
   $('#rCount').textContent = boxes.length; $('#rStab').textContent = target ? streak : 0;
   const z = $('#rZone');
   if(!target){
@@ -476,12 +505,13 @@ function paintReadout(s){
     $('#rSize').textContent = Math.round(t.wmm)+' × '+Math.round(t.hmm)+' mm';
   }
   $('#detList').innerHTML = boxes.length ? boxes.slice(0,12).map(b=>{ const sub = b.sub && subCls(b.sub); const tt = telemetry(s,b);
-    return `<div class="det${b===target?' t':''}" style="--k:${b===target?ACC:(sub?sub.color:'#64666b')}"><i></i><span>${esc(sub?sub.name:'꽁초')}${b===target?' (목표)':''}</span><span class="mm">${sgn(tt.dx)}, ${sgn(tt.dy)} mm</span><span>${Math.round(b.score*100)}%</span></div>`; }).join('')
+    return `<div class="det${b===target&&mode!=='watch'?' t':''}" style="--k:${b===target&&mode!=='watch'?ACC:(sub?sub.color:'#64666b')}"><i></i><span>${esc(sub?sub.name:'꽁초')}${b===target && mode!=='watch'?' (목표)':''}</span><span class="mm">${mode==='watch' ? (sub ? '종류 '+Math.round(b.subConf*100)+'%' : '') : sgn(tt.dx)+', '+sgn(tt.dy)+' mm'}</span><span>${Math.round(b.score*100)}%</span></div>`; }).join('')
     : '<span class="empty">감지된 꽁초가 없습니다.</span>';
 }
 
 /* ---------- overlay ---------- */
 function draw(s){
+  if(mode==='watch') return drawWatch(s);
   const dpr = devicePixelRatio, f = fit(s), mir = view.classList.contains('mirror') && srcKind!=='photo';
   if(ov.width !== Math.round(f.W*dpr) || ov.height !== Math.round(f.H*dpr)){ ov.width = Math.round(f.W*dpr); ov.height = Math.round(f.H*dpr); }
   octx.setTransform(dpr,0,0,dpr,0,0); octx.clearRect(0,0,f.W,f.H);
@@ -508,6 +538,19 @@ function draw(s){
     const sub = target.sub && subCls(target.sub);
     tag(x, y, (sub?sub.name:'꽁초')+' '+Math.round(target.score*100)+'%', false, true);
   }
+}
+function drawWatch(s){
+  const dpr = devicePixelRatio, f = fit(s), mir = view.classList.contains('mirror') && srcKind!=='photo';
+  if(ov.width !== Math.round(f.W*dpr) || ov.height !== Math.round(f.H*dpr)){ ov.width = Math.round(f.W*dpr); ov.height = Math.round(f.H*dpr); }
+  octx.setTransform(dpr,0,0,dpr,0,0); octx.clearRect(0,0,f.W,f.H);
+  const R = b => { let x = f.dx + b.x*f.k, w = b.w*f.k; if(mir) x = f.W - x - w; return [x, f.dy + b.y*f.k, w, b.h*f.k]; };
+  if(on('#gridBtn')){ octx.strokeStyle = 'rgba(255,255,255,.12)'; octx.lineWidth = 1;
+    for(let i=1;i<4;i++){ const gx = f.dx + s.w*f.k*i/4, gy = f.dy + s.h*f.k*i/4; octx.beginPath(); octx.moveTo(gx,f.dy); octx.lineTo(gx,f.dy+s.h*f.k); octx.moveTo(f.dx,gy); octx.lineTo(f.dx+s.w*f.k,gy); octx.stroke(); } }
+  if(collecting && !target){ const side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2; octx.setLineDash([4,4]); octx.strokeStyle = 'rgba(255,255,255,.7)'; octx.lineWidth = 1; octx.strokeRect(cx-side/2, cy-side/2, side, side); octx.setLineDash([]); }
+  octx.font = '500 12px "Pretendard Variable",Pretendard,system-ui,sans-serif'; octx.textBaseline = 'middle';
+  for(const b of boxes){ const sub = b.sub && subCls(b.sub); const [x,y,w,h] = R(b);
+    octx.strokeStyle = sub ? sub.color : '#ffffff'; octx.lineWidth = 2; octx.strokeRect(x,y,w,h);
+    tag(x, y, (sub ? sub.name : '꽁초') + ' ' + Math.round((sub ? b.subConf : b.score)*100) + '%', false, true); }
 }
 function tag(x, y, text, mid, strong){
   const w = octx.measureText(text).width + 12, h = 20, ty = mid ? y - h/2 : (y > h+3 ? y - h - 3 : y + 3);
@@ -580,10 +623,11 @@ function renderSubs(){
 }
 function startHold(id){ if(!subCls(id)) return; collecting = id; document.querySelector(`.hold[data-id="${id}"]`)?.classList.add('on'); }
 function stopHold(){ if(!collecting) return; document.querySelector(`.hold[data-id="${collecting}"]`)?.classList.remove('on'); collecting = null; renderSubs(); saveSubs(); }
+let centerHint = false;
 async function addSample(s){
   if(!net){ $('#subNote').textContent = '종류 분류 모델을 불러오는 중입니다.'; return; }
-  if(!target){ $('#subNote').textContent = '목표 꽁초가 잡혀야 샘플이 쌓입니다.'; return; }
-  grabBox(s, target); const emb = tf.tidy(()=>net.infer(crop, true)); knn.addExample(emb, collecting); emb.dispose();
+  if(target) grabBox(s, target);
+  else { const side = Math.min(s.w, s.h)*0.4; grabBox(s, {x:s.w/2-side/2, y:s.h/2-side/2, w:side/1.35, h:side/1.35}); if(!centerHint){ centerHint = true; toast('꽁초가 안 잡혀서 화면 가운데를 샘플로 담습니다'); } } const emb = tf.tidy(()=>net.infer(crop, true)); knn.addExample(emb, collecting); emb.dispose();
   counts[collecting] = (counts[collecting]||0)+1;
   const n = document.querySelector(`.hold[data-id="${collecting}"] .n`); if(n) n.textContent = counts[collecting];
 }
@@ -618,7 +662,7 @@ function logEvent(s){
   events.unshift(e); if(events.length>500) events.pop();
   const box = $('#events'); box.querySelector('.empty')?.remove();
   const d = document.createElement('div'); d.className = 'ev'; d.style.setProperty('--k', e.color);
-  d.innerHTML = `<img src="${e.img}" alt=""><b>${esc(e.cls)} ${Math.round(e.conf*100)}%</b>${e.time.toLocaleTimeString('ko-KR',{hour12:false})}<br>${sgn(e.dx)}, ${sgn(e.dy)} mm`;
+  d.innerHTML = `<img src="${e.img}" alt=""><b>${esc(e.cls)} ${Math.round(e.conf*100)}%</b>${e.time.toLocaleTimeString('ko-KR',{hour12:false})}${mode==='watch'?'':'<br>'+sgn(e.dx)+', '+sgn(e.dy)+' mm'}`;
   box.prepend(d); while(box.children.length>60) box.lastChild.remove();
   $('#evCount').textContent = events.length+'건';
 }
@@ -692,6 +736,7 @@ function message(){
   const t = target.t; return ['T', Math.round(t.dx), Math.round(t.dy), target.score.toFixed(2), t.inZone?1:0, n].join(',');
 }
 function maybeSend(now){
+  if(mode==='watch') return;
   const rate = num('rate') || 5;
   if(!$('#txOn').checked){ $('#txRate').textContent = '보내지 않음'; return; }
   if(now - lastTx < 1000/rate) return;
@@ -752,9 +797,9 @@ async function loop(){
       for(const b of boxes) b.t = telemetry(s, b);
       target = pickTarget(s, boxes);
       await classify(s);
-      if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(s); }
       trackTarget(s); maybeSend(t0); maybeAutoCap(s, t0);
     }else{ boxes = []; target = null; }
+    if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(s); }
     draw(s); paintReadout(s);
   }catch(e){ console.error(e); }
   $('#ms').textContent = Math.round(performance.now()-t0);
@@ -831,6 +876,15 @@ document.addEventListener('keyup', e=>{ if(/^[1-9]$/.test(e.key)) stopHold(); })
 window.addEventListener('blur', stopHold);
 
 /* ---------- boot ---------- */
+function setMode(m){
+  mode = m; document.body.classList.toggle('watch', m==='watch');
+  for(const b of document.querySelectorAll('.mode button')) b.setAttribute('aria-pressed', String(b.dataset.mode===m));
+  if(m==='watch' && $('#t-bot').getAttribute('aria-selected')==='true') $('#t-det').click();
+  $('#events').querySelector('.empty') && ($('#events').querySelector('.empty').textContent = m==='watch' ? '꽁초가 잠깐 이상 잡히면 여기에 남습니다.' : '목표가 잠깐 이상 유지되면 여기에 남습니다.');
+  try{ localStorage.setItem(KEY+'-mode', m) }catch(_){}
+}
+for(const b of document.querySelectorAll('.mode button')) b.addEventListener('click', ()=>setMode(b.dataset.mode));
+try{ setMode(localStorage.getItem(KEY+'-mode')==='arm' ? 'arm' : 'watch'); }catch(_){ setMode('watch'); }
 loadSettings(); paintOutputs(); paintSample(); paintSens(); renderSubs(); paintDs(); linkState();
 log('로봇 탭에서 연결하고 자동 송신을 켜면 목표 좌표가 여기 찍힙니다.', 'sys');
 startCam(); loadDetector();
