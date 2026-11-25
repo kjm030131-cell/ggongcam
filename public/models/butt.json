@@ -5,32 +5,33 @@
     {
       "file": "butt-512.onnx",
       "imgsz": 512,
-      "conf": 0.25
+      "conf": 0.439
     },
     {
       "file": "butt-384.onnx",
       "imgsz": 384,
-      "conf": 0.25
+      "conf": 0.439
     },
     {
       "file": "butt-close-416.onnx",
       "imgsz": 416,
+      "conf": 0.35,
       "kind": "close",
-      "note": "CigWasteNet만 학습한 첫 모델. 바닥을 가까이서 내려다볼 때 더 정확",
-      "conf": 0.35
+      "note": "CigWasteNet만 학습한 첫 모델. 바닥을 가까이서 내려다볼 때 더 정확"
     }
   ],
   "names": [
     "꽁초"
   ],
   "test": {
-    "precision": 0.8883,
-    "recall": 0.6566,
-    "map50": 0.7537,
-    "map50_95": 0.495,
-    "conf": 0.25
+    "precision": 0.9418,
+    "recall": 0.8383,
+    "map50": 0.9061,
+    "map50_95": 0.6804,
+    "f1": 0.8874,
+    "conf": 0.439
   },
-  "dataset": "CigWasteNet + TACO + 직접 모은 사진",
+  "dataset": "CigWasteNet + TACO + 한국 스틱 합성 + 직접 모은 사진",
   "base": "yolo11n",
-  "trained_at": "2026-11-25T13:09Z"
+  "trained_at": "2026-11-25T18:51Z"
 }
