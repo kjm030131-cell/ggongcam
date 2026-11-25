@@ -504,11 +504,11 @@ const sgn = v => { const r = Math.round(v); return r===0 ? '0' : (r>0?'+':'−')
 function paintReadout(s){
   if(mode==='watch'){
     $('#sTotal').innerHTML = boxes.length + '<small>개</small>';
-    const st = $('#sState'); st.textContent = boxes[0]?.center ? '가운데 판정' : boxes.length ? '감지 중' : detState==='ok' || (subReady() && $('#centerOn').checked) ? '없음' : !subReady() && subTotal() ? '샘플 부족' : detState==='pending' ? '모델 학습 중' : '대기'; st.className = 'pill' + (boxes.length ? ' go' : '');
+    const st = $('#sState'); st.textContent = boxes.length && boxes.every(b=>b.center) ? '가운데 판정' : boxes.length ? '감지 중' : detState==='ok' || (subReady() && $('#centerOn').checked) ? '없음' : !subReady() && subTotal() ? '샘플 부족' : detState==='pending' ? '모델 학습 중' : '대기'; st.className = 'pill' + (boxes.length ? ' go' : '');
     const rows = [{id:null, name: subReady() ? '종류 미정' : '꽁초', color:'#ededee'}, ...subs.filter(c=>c.id!=='bg')];
     const cnt = id => boxes.filter(b => (b.sub||null) === id).length, mx = Math.max(1, boxes.length);
     $('#sTypes').innerHTML = rows.filter(r => r.id===null || subReady()).map(r => { const c = cnt(r.id); return `<div class="ty" style="--k:${r.color}"><i></i><span>${esc(r.name)}</span><b>${c}</b><div class="bar"><div style="width:${c/mx*100}%"></div></div></div>`; }).join('')
-      + (subReady() ? '' : '<p class="hint" style="margin:4px 0 0">' + subHint() + '</p>');
+      + (subReady() && counts.bg ? '' : '<p class="hint" style="margin:4px 0 0">' + subHint() + '</p>');
   }
   $('#rCount').textContent = boxes.length; $('#rStab').textContent = target ? streak : 0;
   const z = $('#rZone');
@@ -570,13 +570,14 @@ function drawWatch(s){
   const R = b => { let x = f.dx + b.x*f.k, w = b.w*f.k; if(mir) x = f.W - x - w; return [x, f.dy + b.y*f.k, w, b.h*f.k]; };
   if(on('#gridBtn')){ octx.strokeStyle = 'rgba(255,255,255,.12)'; octx.lineWidth = 1;
     for(let i=1;i<4;i++){ const gx = f.dx + s.w*f.k*i/4, gy = f.dy + s.h*f.k*i/4; octx.beginPath(); octx.moveTo(gx,f.dy); octx.lineTo(gx,f.dy+s.h*f.k); octx.moveTo(f.dx,gy); octx.lineTo(f.dx+s.w*f.k,gy); octx.stroke(); } }
-  if(((collecting && !target) || ($('#centerOn').checked && subReady() && (!boxes.length || boxes[0].center)))){ const side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2; octx.setLineDash([4,4]); octx.strokeStyle = 'rgba(255,255,255,.7)'; octx.lineWidth = 1; octx.strokeRect(cx-side/2, cy-side/2, side, side); octx.setLineDash([]); }
+  if(((collecting && !target) || ($('#centerOn').checked && subReady() && counts.bg))){ const side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2; octx.setLineDash([4,4]); octx.strokeStyle = 'rgba(255,255,255,.7)'; octx.lineWidth = 1; octx.strokeRect(cx-side/2, cy-side/2, side, side); octx.setLineDash([]); }
   octx.font = '500 12px "Pretendard Variable",Pretendard,system-ui,sans-serif'; octx.textBaseline = 'middle';
   for(const b of boxes){ if(b.center) continue; const sub = b.sub && subCls(b.sub); const [x,y,w,h] = R(b), col = sub ? sub.color : '#ffffff';
     if(b.locked){ octx.strokeStyle = 'rgba(255,255,255,.18)'; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); brackets(x,y,w,h,col,2.5,b.lockedAt);
       tag(x, y, '#'+b.id+' '+(sub ? sub.name : '꽁초')+' '+Math.round((sub ? b.subConf : b.score)*100)+'%', false, true); }
     else { octx.setLineDash([3,3]); octx.strokeStyle = 'rgba(255,255,255,.6)'; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); octx.setLineDash([]); } }
-  if(boxes[0]?.center){ const b = boxes[0], sub = subCls(b.sub), side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2;
+  const cb = boxes.find(b=>b.center);
+  if(cb){ const b = cb, sub = subCls(b.sub), side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2;
     octx.strokeStyle = sub.color; octx.lineWidth = 2; octx.strokeRect(cx-side/2, cy-side/2, side, side);
     tag(cx-side/2, cy-side/2, sub.name+' '+Math.round(b.subConf*100)+'% (가운데 판정)', false, true); }
 }
@@ -679,16 +680,18 @@ async function classify(s){
 }
 const centerBox = s => { const side = Math.min(s.w, s.h)*0.4/1.35; return {x:s.w/2-side/2, y:s.h/2-side/2, w:side, h:side}; };
 async function centerJudge(s){
-  if(mode!=='watch' || !net || !subReady() || !$('#centerOn').checked) return;
+  if(mode!=='watch' || !net || !subReady() || !counts.bg || !$('#centerOn').checked) return;
   const b = centerBox(s); grabBox(s, b);
   const emb = tf.tidy(()=>net.infer(crop, true)); const res = await knn.predictClass(emb, Math.min(num('kVal'), subTotal())); emb.dispose();
   let best = null, bv = 0; for(const c of subs){ const v = res.confidences[c.id]||0; if(v>bv){bv=v;best=c.id} }
   centerRes = {best, bv};
-  if(best && best!=='bg' && bv >= num('thr')/100){ Object.assign(b, {score:bv, sub:best, subConf:bv, center:true}); b.t = telemetry(s, b); boxes = [b]; target = b; }
+  if(best && best!=='bg' && bv >= num('thr')/100){ Object.assign(b, {score:bv, sub:best, subConf:bv, center:true}); b.t = telemetry(s, b);
+    if(!boxes.length){ boxes = [b]; target = b; } else if(!boxes.some(x => iou(x, b) > .1)) boxes = [...boxes, b]; }
 }
 let centerRes = null;
 function subHint(){
   const have = subs.filter(c=>counts[c.id]>0);
+  if(have.length >= 2 && !counts.bg) return '꽁초 없음(빈 바닥, 손, 배경) 샘플이 없어서 가운데 판정을 쉬고 있습니다. 종류 탭에서 숫자키 4로 30장 이상 모으세요.';
   if(!have.length) return '종류 탭에서 꽁초 없음과 아이코스 같은 종류 샘플을 모으면 종류별로 나눠 셉니다.';
   const h = have[0];
   return h.id==='bg' ? `꽁초 없음 ${counts.bg}장만 있습니다. 종류 탭에서 아이코스 같은 종류 샘플을 모으거나 내보낸 샘플 파일을 불러오면 판정이 시작됩니다.`
@@ -911,7 +914,7 @@ async function infer(s){
       for(const b of boxes){ if(b.sub){ b.track.sub = b.sub; b.track.subConf = b.subConf; } }
     }else{ boxes = []; target = null; }
     centerRes = null;
-    if(!boxes.length) await centerJudge(s);
+    await centerJudge(s);
     if(detState==='ok' || boxes.length){ trackTarget(s); maybeSend(t0); maybeAutoCap(s, t0); }
     if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(s); }
   }catch(e){ console.error(e); }
