@@ -1,0 +1,17 @@
+{
+  "name": "꽁줍이 비전",
+  "short_name": "꽁캠",
+  "description": "카메라로 담배꽁초를 찾고 학습 사진을 모으는 꽁줍이 인식 도구",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#18191b",
+  "theme_color": "#18191b",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

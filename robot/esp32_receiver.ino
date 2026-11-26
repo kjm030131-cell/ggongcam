@@ -19,10 +19,14 @@ void onTarget(int x, int y, float conf, bool inZone, int n) {
   }
 }
 
+int lastAngle = 999;  // 999 = 모름
+
 void handle(const String& s) {
   if (s.startsWith("T,")) {
-    int x, y, in, n; float conf;
-    if (sscanf(s.c_str(), "T,%d,%d,%f,%d,%d", &x, &y, &conf, &in, &n) == 5) onTarget(x, y, conf, in == 1, n);
+    int x, y, in, n, ang = 0; float conf;
+    // 마지막 값(꽁초가 누운 방향, 가로 0도, 시계 방향 +)은 모를 때 비어 있다. 손목 서보를 이 각도만큼 돌리면 집게가 꽁초와 직각이 된다.
+    int got = sscanf(s.c_str(), "T,%d,%d,%f,%d,%d,%d", &x, &y, &conf, &in, &n, &ang);
+    if (got >= 5) { lastAngle = (got == 6) ? ang : 999; onTarget(x, y, conf, in == 1, n); }
   } else if (s.startsWith("N,")) {
     // 목표 없음: 탐색 동작
   } else if (s == "HOME") {

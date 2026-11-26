@@ -2,7 +2,14 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#18191b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="꽁캠">
 <title>꽁줍이 비전</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +53,8 @@ code{font:12px var(--mono);color:var(--ink2)}
 .stage{display:grid;grid-template-rows:minmax(0,1fr) auto 200px;border-right:1px solid var(--line);min-height:0}
 .view{position:relative;background:#111214;overflow:hidden}
 .view video,.view canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.view.mirror video{transform:scaleX(-1)}
+.view.cover video,.view.cover #still{object-fit:cover}
+.view video{transform-origin:50% 50%}
 #still{display:none}.view.photo #still{display:block}.view.photo video{visibility:hidden}
 #ov{pointer-events:none}
 .msg{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:14px;padding:24px;text-align:center;background:#111214}
@@ -207,6 +215,68 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:700px){#qrBtn{display:none}.view{aspect-ratio:auto;height:64vh;height:64svh}.toolbar .btn span,.toolbar .lbl{display:none}.toolbar #capBtn{display:none}.top{gap:10px;padding:0 10px}.status{gap:10px}#stModel span{max-width:120px;overflow:hidden;text-overflow:ellipsis}}
 @media(max-width:600px){.bottom{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr;height:440px}.pane{border-right:0;border-bottom:1px solid var(--line)}.brand .src{display:none}.status #stLink{display:none}.toolbar .push{margin-left:0}}
+
+/* camera controls (desktop toolbar) */
+.camctl{display:flex;align-items:center;gap:8px}
+.camctl input[type=range]{width:110px}
+.camctl .zv{font-size:12px;color:var(--mute);min-width:3.2em}
+.btn[aria-pressed=true]{background:var(--ink);color:#18191b;border-color:var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.tags button{height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-size:12.5px;color:var(--mute)}
+.tags button[aria-pressed=true]{background:var(--s3);border-color:var(--ink2);color:var(--ink)}
+.grid figcaption.warn{background:rgba(229,104,79,.9);color:#fff}
+.review{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:var(--r);background:var(--s2);margin:0 0 12px;font-size:13px}
+.review[hidden]{display:none}
+.edfoot .warnmsg{color:var(--err);font-size:12.5px}
+
+/* phone HUD (only in body.phone) */
+.hud,.scrim,.sheethead,.focus{display:none}
+body.phone .top,body.phone .toolbar,body.phone .bottom,body.phone .fab{display:none}
+body.phone .app{display:block;height:auto;min-height:0}
+body.phone .stage{display:block;border:0}
+body.phone .view{position:fixed;left:0;top:0;width:100%;height:100vh;height:100svh;aspect-ratio:auto;touch-action:none;z-index:1}
+body.phone .hud{display:block;position:absolute;inset:0;pointer-events:none;z-index:2}
+.hud>*{pointer-events:auto}
+.hud-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:flex-start;gap:6px;padding:calc(env(safe-area-inset-top) + 10px) 10px 0}
+.chip{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 11px;border-radius:999px;background:rgba(17,18,20,.62);font-size:12.5px;color:var(--ink2);white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.chip b{color:var(--ink);font-weight:600}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.chip.ok i{background:var(--okd)}.chip.go{background:rgba(237,237,238,.92);color:#18191b}.chip.go b{color:#18191b}.chip.go i{background:#18191b}
+.chip[hidden]{display:none}
+.hud-r{margin-left:auto;display:flex;flex-direction:column;gap:8px}
+.ib{width:40px;height:40px;border-radius:50%;border:0;background:rgba(17,18,20,.62);display:grid;place-items:center;cursor:pointer;color:var(--ink);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.ib svg{width:19px;height:19px}
+.ib[aria-pressed=true]{background:rgba(237,237,238,.95);color:#18191b}
+.ib[hidden]{display:none}
+.zoombar{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 118px);display:flex;justify-content:center;gap:8px}
+.zoombar button{min-width:40px;height:40px;padding:0 8px;border-radius:999px;border:0;background:rgba(17,18,20,.62);color:var(--ink2);font-size:12.5px;font-weight:600;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.zoombar button[aria-pressed=true]{background:rgba(237,237,238,.95);color:#18191b}
+.hud-bot{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px);background:linear-gradient(to top,rgba(10,10,11,.55),rgba(10,10,11,0))}
+.pb{justify-self:start;height:46px;min-width:96px;padding:0 14px;border-radius:23px;border:1px solid rgba(255,255,255,.22);background:rgba(17,18,20,.62);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.pb:last-child{justify-self:end}
+.pb b{font-weight:600;margin-left:4px;color:var(--ink2)}
+.pb[aria-pressed=false]{color:var(--mute)}
+.shutter{width:76px;height:76px;border-radius:50%;border:4px solid rgba(255,255,255,.92);background:transparent;padding:0;display:grid;place-items:center;cursor:pointer}
+.shutter span{width:60px;height:60px;border-radius:50%;background:#fff;transition:transform .1s}
+.shutter:active span{transform:scale(.88)}
+.shutter.test{border-color:var(--acc)}.shutter.test span{background:var(--acc)}
+body.phone .focus{display:block;position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border:1.5px solid #fff;border-radius:6px;opacity:0;pointer-events:none;z-index:3;transition:opacity .4s}
+.focus.on{opacity:1;transition:none}
+body.phone .banner{bottom:auto;top:calc(env(safe-area-inset-top) + 52px)}
+body.phone .toast{top:calc(env(safe-area-inset-top) + 52px)}
+/* settings sheet */
+body.phone .side{position:fixed;left:0;right:0;bottom:0;height:78vh;height:78svh;z-index:4;border-radius:14px 14px 0 0;border-top:1px solid var(--line2);transform:translateY(102%);transition:transform .22s ease;box-shadow:0 -10px 30px rgba(0,0,0,.4)}
+body.phone .side.open{transform:none}
+body.phone .side .panel{overflow:auto;-webkit-overflow-scrolling:touch}
+body.phone .sheethead{display:flex;align-items:center;gap:10px;padding:10px 12px 4px;position:relative}
+.sheethead .grab{position:absolute;left:50%;top:5px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line2)}
+.sheethead .btn{margin-left:auto}
+body.phone .scrim{position:fixed;inset:0;z-index:3;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .22s}
+body.phone .scrim.on{display:block;opacity:1;pointer-events:auto}
+body.phone .tabs{overflow-x:auto}
+body.phone .field select,body.phone .field input[type=number],body.phone .field input[type=url],body.phone .field input[type=text]{width:150px}
+body.phone .btn{height:40px}
+body.phone .seg button{height:34px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -236,6 +306,26 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
       <div class="banner" id="banner"></div>
       <div class="toast" id="toast" role="status"></div>
       <button class="fab" id="fab" type="button" aria-label="사진 저장"><span></span><b id="fabCount">0</b></button>
+      <div class="hud" id="hud">
+        <div class="hud-top">
+          <span class="chip" id="hCount"><i></i><b>0</b>개</span>
+          <span class="chip" id="hUp" hidden></span>
+          <span class="chip" id="hSave" hidden>절전</span>
+          <div class="hud-r">
+            <button class="ib" id="sheetBtn" type="button" aria-label="설정"><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 6h9M15 6h2M3 14h2M8 14h9"/><circle cx="13.5" cy="6" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6.5" cy="14" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+            <button class="ib" type="button" data-act="torch" aria-pressed="false" aria-label="플래시"><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M11.5 1.5 4 11h5l-1 7.5L15.5 9h-5z"/></svg></button>
+            <button class="ib" type="button" data-act="night" aria-pressed="false" aria-label="야간 보정"><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"/></svg></button>
+            <button class="ib" type="button" id="fsBtn" aria-label="전체화면" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 7.5V3h4.5M12.5 3H17v4.5M17 12.5V17h-4.5M7.5 17H3v-4.5"/></svg></button>
+          </div>
+        </div>
+        <div class="zoombar" id="zoombar" role="group" aria-label="줌"></div>
+        <div class="hud-bot">
+          <button class="pb" id="pDet" type="button" aria-pressed="true">감지 켬</button>
+          <button class="shutter" id="pCap" type="button" aria-label="사진 저장"><span></span></button>
+          <button class="pb" id="pUp" type="button">업로드<b id="pUpN">0</b></button>
+        </div>
+      </div>
+      <div class="focus" id="focus"></div>
       <div class="msg" id="msg"><p id="msgText"></p><div class="row"><button class="btn pri" id="retry" type="button">카메라 다시 연결</button><button class="btn" id="msgFile" type="button">사진이나 영상으로 테스트</button></div></div>
     </div>
 
@@ -244,6 +334,9 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
       <button class="btn" id="pauseBtn" type="button" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 3h3v10H4zM9 3h3v10H9z"/></svg><span>일시정지</span></button>
       <button class="btn" id="fileBtn" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M2.5 4.5h4l1.5 1.5h5.5v7h-11z"/></svg><span>파일 열기</span></button>
       <input type="file" id="fileIn" accept="image/*,video/*" hidden>
+      <span class="camctl" id="camctl"><span class="lbl">줌</span><input type="range" id="zoomR" min="1" max="4" step="0.1" value="1" aria-label="줌"><span class="zv" id="zoomV">1.0×</span>
+        <button class="btn" type="button" data-act="torch" aria-pressed="false" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M11.5 1.5 4 11h5l-1 7.5L15.5 9h-5z"/></svg><span>플래시</span></button>
+        <button class="btn" type="button" data-act="night" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"/></svg><span>야간 보정</span></button></span>
       <button class="btn" id="capBtn" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8.5" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="none" stroke="currentColor" stroke-width="1.4" d="M2 4.5h3l1-1.5h4l1 1.5h3v9H2z"/></svg><span>프레임 저장</span> <kbd>S</kbd></button>
       <div class="push">
         <span class="lbl">표시</span>
@@ -268,7 +361,8 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
     </div>
   </section>
 
-  <aside class="side">
+  <aside class="side" id="side">
+    <div class="sheethead"><div class="grab"></div><div class="seg mode" role="group" aria-label="모드"><button type="button" data-mode="watch" aria-pressed="true">감지</button><button type="button" data-mode="arm" aria-pressed="false">로봇팔</button></div><button class="btn ghost" id="sheetClose" type="button">닫기</button></div>
     <div class="tabs" role="tablist">
       <button role="tab" id="t-det" aria-selected="true" aria-controls="p-det">감지</button>
       <button role="tab" id="t-bot" class="arm-only" aria-selected="false" aria-controls="p-bot">로봇</button>
@@ -286,7 +380,7 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
         <div class="rtop"><span class="rname" id="rName"><b>대기</b></span><span class="pill" id="rZone">영역 밖</span></div>
         <div class="xy"><div><span>X (오른쪽 +)</span><b id="rX">-</b></div><div><span>Y (앞 +)</span><b id="rY">-</b></div></div>
         <p class="dir" id="rDir">목표 없음</p>
-        <dl class="dl"><dt>감지 신뢰도</dt><dd id="rConf">-</dd><dt>화면 좌표</dt><dd id="rPx">-</dd><dt>크기</dt><dd id="rSize">-</dd><dt>유지 프레임</dt><dd id="rStab">0</dd><dt>화면 속 꽁초</dt><dd id="rCount">0</dd></dl>
+        <dl class="dl"><dt>감지 신뢰도</dt><dd id="rConf">-</dd><dt>화면 좌표</dt><dd id="rPx">-</dd><dt>크기</dt><dd id="rSize">-</dd><dt>누운 방향</dt><dd id="rAng">-</dd><dt>유지 프레임</dt><dd id="rStab">0</dd><dt>화면 속 꽁초</dt><dd id="rCount">0</dd></dl>
       </div>
       <div class="sec">
         <h2>감지 목록</h2>
@@ -297,9 +391,10 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
         <div class="field"><label>감도</label>
           <div class="seg" role="group" aria-label="감도" id="sens"><button type="button" data-v="65">낮음</button><button type="button" data-v="50">보통</button><button type="button" data-v="35">높음</button></div></div>
         <div class="field"><label>감지 범위</label>
-          <div class="seg" role="group" aria-label="감지 범위" id="regionSeg"><button type="button" data-v="full">전체</button><button type="button" data-v="zoom">가운데 확대</button><button type="button" data-v="tile">정밀</button></div></div>
-        <input type="hidden" id="region" value="full">
-        <p class="hint" style="margin:-4px 0 12px">멀리서 비춰 꽁초가 작게 보이면 가운데 확대(2배, 빠름)나 정밀(화면을 나눠 5번 봄, 느림)을 쓰세요.</p>
+          <div class="seg" role="group" aria-label="감지 범위" id="regionSeg"><button type="button" data-v="full">빠르게</button><button type="button" data-v="auto">자동 정밀</button><button type="button" data-v="tile">전부 정밀</button></div></div>
+        <input type="hidden" id="region" value="auto">
+        <p class="hint" style="margin:-4px 0 12px">자동 정밀은 전체 화면과 함께 화면 조각을 하나씩 돌아가며 크게 봐서 멀리 있는 작은 꽁초도 잡습니다. 전부 정밀은 매번 모든 조각을 봐서 더 잘 잡지만 느립니다.</p>
+        <div class="field"><label for="camSel2">카메라</label><select id="camSel2"></select></div>
         <div class="field arm-only"><label for="policy">목표 고르기</label><select id="policy"><option value="near">기준점에 가까운 것</option><option value="conf">가장 확실한 것</option><option value="big">가장 큰 것</option></select></div>
         <details>
           <summary>고급 설정</summary>
@@ -351,10 +446,16 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
     <div class="panel" id="p-data" role="tabpanel">
       <div class="sec">
         <h2>재학습용 사진 모으기</h2>
-        <p class="hint">지금 모델은 해외 캠퍼스 사진으로 배웠습니다. 학교 주변 바닥, 에쎄, 아이코스 스틱을 모아 다시 학습시키면 정확도가 올라갑니다. 저장할 때 그 순간의 감지 박스가 라벨로 같이 들어갑니다. 사진을 누르면 박스를 직접 그리거나 지울 수 있어서, 감지가 못 잡은 아이코스 스틱도 폰에서 바로 라벨을 달 수 있습니다. 사진은 이 기기에 보관되어 새로고침해도 남습니다.</p>
+        <p class="hint">저장하면 그 순간의 감지 박스가 라벨로 같이 들어갑니다. 사진을 누르면 박스를 고칠 수 있습니다. 사람 얼굴이 보이는 사진은 자동으로 업로드에서 빠집니다.</p>
+        <div class="field"><label>찍는 사진 용도</label><div class="seg" role="group" aria-label="사진 용도" id="splitSeg"><button type="button" data-v="train" aria-pressed="true">학습용</button><button type="button" data-v="test" aria-pressed="false">시험용</button></div></div>
+        <p class="hint" id="splitHint" style="margin:-4px 0 10px">시험용 사진은 학습에 절대 넣지 않고 모델 성적을 매기는 데만 씁니다. 학교 안 실제 장소에서 찍고, 박스를 꼭 확인한 뒤 보내세요.</p>
+        <div class="tags" id="tags" role="group" aria-label="장면 태그"><button type="button" data-t="paver" aria-pressed="false">보도블록</button><button type="button" data-t="asphalt" aria-pressed="false">아스팔트</button><button type="button" data-t="soil" aria-pressed="false">화단·흙</button><button type="button" data-t="grass" aria-pressed="false">잔디</button><button type="button" data-t="indoor" aria-pressed="false">실내</button><button type="button" data-t="night" aria-pressed="false">밤</button><button type="button" data-t="wet" aria-pressed="false">비 온 뒤</button><button type="button" data-t="far" aria-pressed="false">멀리서</button></div>
+        <div class="review" id="review" hidden><span id="reviewN">검수할 사진 0장</span><button class="btn pri" id="reviewBtn" type="button">검수 시작</button></div>
         <div class="stat"><div><span>사진</span><b id="dsN">0</b></div><div><span>박스</span><b id="dsB">0</b></div><div><span>빈 바닥</span><b id="dsE">0</b></div></div>
+        <div class="field"><label for="lockCap">꽁초를 확실히 잡으면 자동 저장</label><span class="switch"><input type="checkbox" id="lockCap" aria-label="꽁초를 확실히 잡으면 자동 저장"><i></i></span></div>
+        <div class="field"><label for="doubtCap">애매하게 본 장면 따로 모으기</label><span class="switch"><input type="checkbox" id="doubtCap" aria-label="애매하게 본 장면 따로 모으기"><i></i></span></div>
         <div class="field"><label for="autoCap">자동 저장</label><select id="autoCap"><option value="0">끔</option><option value="1">1초마다</option><option value="2">2초마다</option><option value="5">5초마다</option></select></div>
-        <div class="field"><label for="capWhen">저장할 때</label><select id="capWhen"><option value="hit">꽁초가 보일 때</option><option value="all">항상 (빈 바닥 포함)</option><option value="low">애매할 때 (25~60%)</option></select></div>
+        <div class="field"><label for="capWhen">저장할 때</label><select id="capWhen"><option value="hit">꽁초가 보일 때</option><option value="all">항상 (빈 바닥 포함)</option><option value="low">애매할 때</option></select></div>
         <div class="row" style="margin-top:14px">
           <button class="btn pri" id="dsZip" type="button">ZIP 내보내기</button>
           <button class="btn" id="capBtn2" type="button">지금 저장</button>
@@ -371,6 +472,11 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
         <div class="field"><label for="upCode">업로드 비밀번호</label><input type="text" id="upCode" autocomplete="off" placeholder="처음 한 번만" style="width:170px"></div>
         <div class="row" style="margin-top:4px"><button class="btn pri" id="upBtn" type="button">안 보낸 사진 보내기</button></div>
         <p class="hint" id="upNote" style="margin:10px 0 0"></p>
+      </div>
+      <div class="sec">
+        <h2>앱처럼 쓰기</h2>
+        <p class="hint" id="installHint">홈 화면에 추가하면 주소창 없이 앱처럼 열립니다. 아이폰은 사파리 공유 버튼에서 홈 화면에 추가를 누르세요.</p>
+        <div class="row"><button class="btn" id="installBtn" type="button" hidden>홈 화면에 설치</button></div>
       </div>
     </div>
 
@@ -397,11 +503,12 @@ body.watch .bottom{grid-template-columns:minmax(0,1fr)}
   </aside>
 </main>
 
+<div class="scrim" id="scrim"></div>
 <div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="박스 고치기">
   <div class="edbar"><b>박스 고치기</b><span id="edInfo"></span><button class="btn ghost" id="edClose" type="button">닫기</button></div>
   <canvas id="edCanvas"></canvas>
-  <div class="edfoot"><span class="hint" style="margin:0">빈 곳을 드래그하면 박스가 생기고, 박스를 누르면 선택됩니다.</span>
-    <div class="row"><button class="btn" id="edDel" type="button">선택 박스 삭제</button><button class="btn" id="edClear" type="button">박스 모두 지우기</button><button class="btn ghost danger" id="edRemove" type="button">사진 삭제</button><button class="btn pri" id="edSave" type="button">저장</button></div></div>
+  <div class="edfoot"><span class="hint" style="margin:0" id="edHint">빈 곳을 드래그하면 박스가 생기고, 박스를 누르면 선택됩니다.</span><span class="warnmsg" id="edWarn" hidden>사람 얼굴이 보여서 업로드에서 뺐습니다.</span><button class="btn" id="edFaceOk" type="button" hidden>얼굴 없음, 보내도 됨</button>
+    <div class="row"><button class="btn" id="edDel" type="button">선택 박스 삭제</button><button class="btn" id="edClear" type="button">박스 모두 지우기</button><button class="btn ghost danger" id="edRemove" type="button">사진 삭제</button><button class="btn pri" id="edSave" type="button">저장</button><button class="btn pri" id="edNext" type="button" hidden>맞음, 다음</button></div></div>
 </div>
 <div class="help" id="qr" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
   <div style="text-align:center;width:min(320px,92vw)">
@@ -442,11 +549,12 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 
 /* ---------- settings ---------- */
 const SET_IDS = ['region','modelSize','conf','iou','stab','policy','fieldMm','zoneY','zoneW','zoneH','baud','wsUrl','rate','fmt','onlyT','autoCap','capWhen','thr','kVal','resSel'];
-let mirrorPref = {}, facing = 'user';
-function setMirror(v){ view.classList.toggle('mirror', v); $('#mirrorBtn').setAttribute('aria-pressed', String(v)); }
+let mirrorPref = {}, facing = 'user', zoomD = 1;
+const isPhone = () => document.body.classList.contains('phone');
+function setMirror(v){ view.classList.toggle('mirror', v); $('#mirrorBtn').setAttribute('aria-pressed', String(v)); applyVideoTransform(); }
 function applyMirror(){ const v = mirrorPref[facing]; setMirror(v==null ? facing!=='environment' : v); }
-function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); if((s.v||0) < 2) delete s.conf; for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; mirrorPref = s.mirrorPref || {}; if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
-function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirrorPref = mirrorPref; s.v = 2; s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
+function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||'{}'); if((s.v||0) < 2) delete s.conf; if((s.v||0) < 3){ delete s.region; if(isPhone()) delete s.resSel; } if(s.resSel==null && isPhone()) $('#resSel').value = '1920'; for(const id of ['lockCap','doubtCap']) if(s[id]!=null) $('#'+id).checked = !!s[id]; for(const id of SET_IDS) if(s[id]!=null && $('#'+id)) $('#'+id).value = s[id]; mirrorPref = s.mirrorPref || {}; if(s.zone===false) $('#zoneBtn').setAttribute('aria-pressed','false'); if(s.grid) $('#gridBtn').setAttribute('aria-pressed','true'); }catch(_){} }
+function saveSettings(){ try{ const s = {}; for(const id of SET_IDS) s[id] = $('#'+id).value; s.mirrorPref = mirrorPref; s.v = 3; s.lockCap = $('#lockCap').checked; s.doubtCap = $('#doubtCap').checked; s.zone = on('#zoneBtn'); s.grid = on('#gridBtn'); localStorage.setItem(KEY, JSON.stringify(s)); }catch(_){} }
 const on = sel => $(sel).getAttribute('aria-pressed') === 'true';
 const num = id => +$('#'+id).value;
 const OUTS = {conf:v=>v+'%', iou:v=>v+'%', stab:v=>v, zoneY:v=>v+'%', zoneW:v=>v+'%', zoneH:v=>v+'%', thr:v=>v+'%', kVal:v=>v};
@@ -466,7 +574,11 @@ function src(){
   if(srcKind==='photo') return {el:still, w:still.width, h:still.height};
   return {el:video, w:video.videoWidth, h:video.videoHeight};
 }
-function fit(s){ const r = view.getBoundingClientRect(); const k = Math.min(r.width/s.w, r.height/s.h); return {k, dx:(r.width-s.w*k)/2, dy:(r.height-s.h*k)/2, W:r.width, H:r.height}; }
+function fit(s){ const r = view.getBoundingClientRect(); const base = view.classList.contains('cover') ? Math.max(r.width/s.w, r.height/s.h) : Math.min(r.width/s.w, r.height/s.h);
+  const k = base * (srcKind==='photo' ? 1 : zoomD); return {k, dx:(r.width-s.w*k)/2, dy:(r.height-s.h*k)/2, W:r.width, H:r.height}; }
+// 화면에 실제로 보이는 원본 영역. 폰(꽉 채움)이나 디지털 줌일 때는 보이는 부분만 감지한다.
+function visRect(s){ const f = fit(s); const x0 = Math.max(0, -f.dx/f.k), y0 = Math.max(0, -f.dy/f.k), x1 = Math.min(s.w, (f.W-f.dx)/f.k), y1 = Math.min(s.h, (f.H-f.dy)/f.k); return x1-x0 < 8 || y1-y0 < 8 ? [0,0,s.w,s.h] : [x0, y0, x1-x0, y1-y0]; }
+function applyVideoTransform(){ const m = view.classList.contains('mirror'), z = zoomD > 1.001 ? zoomD : 1; video.style.transform = (m ? 'scaleX(-1) ' : '') + (z > 1 ? 'scale('+z.toFixed(3)+')' : ''); }
 function zoneRect(s){ const w = s.w*num('zoneW')/100, h = s.h*num('zoneH')/100, cx = s.w/2, cy = s.h*num('zoneY')/100; return {x:cx-w/2, y:cy-h/2, w, h, cx, cy}; }
 const mmPerPx = s => num('fieldMm') / (s.w || 1);
 function setSt(id, text, kind){ const c = $('#'+id); c.className = 'st' + (c.classList.contains('arm-only')?' arm-only':'') + (kind?' '+kind:''); c.querySelector('span').textContent = text; }
@@ -531,10 +643,10 @@ async function runOn(s, rx, ry, rw, rh, th){
   const S = lb.width, r = Math.min(S/rw, S/rh), nw = Math.round(rw*r), nh = Math.round(rh*r), px = (S-nw)/2, py = (S-nh)/2;
   lctx.fillStyle = 'rgb(114,114,114)'; lctx.fillRect(0,0,S,S);
   lctx.drawImage(s.el, rx, ry, rw, rh, px, py, nw, nh);
-  const d = lctx.getImageData(0,0,S,S).data, n = S*S;
+  const d = lctx.getImageData(0,0,S,S).data, n = S*S, g = nightOn ? 1.8 : 1;
   if(!inBuf || inBuf.length !== 3*n) inBuf = new Float32Array(3*n);
-  const f = inBuf, k = 1/255;
-  for(let i=0, j=0; i<n; i++, j+=4){ f[i]=d[j]*k; f[n+i]=d[j+1]*k; f[2*n+i]=d[j+2]*k; }
+  const f = inBuf, k = g/255;
+  if(g===1){ for(let i=0, j=0; i<n; i++, j+=4){ f[i]=d[j]*k; f[n+i]=d[j+1]*k; f[2*n+i]=d[j+2]*k; } } else { for(let i=0, j=0; i<n; i++, j+=4){ f[i]=Math.min(1,d[j]*k); f[n+i]=Math.min(1,d[j+1]*k); f[2*n+i]=Math.min(1,d[j+2]*k); } }
   const out = await det.run({[det.inputNames[0]]: new ort.Tensor('float32', f, [1,3,S,S])});
   const o = out[det.outputNames[0]], N = o.dims[2], a = o.data, c = [];
   for(let i=0;i<N;i++){ const sc = a[4*N+i]; if(sc < th) continue; const w=a[2*N+i], h=a[3*N+i];
@@ -542,18 +654,35 @@ async function runOn(s, rx, ry, rw, rh, th){
     c.push({x, y, w:Math.min(w/r, rx+rw-x), h:Math.min(h/r, ry+rh-y), score:sc}); }
   return c;
 }
-function regionRects(s){
-  const reg = $('#region').value;
-  if(reg==='zoom'){ const w = s.w/2, h = s.h/2; return [[(s.w-w)/2, (s.h-h)/2, w, h]]; }
-  if(reg==='tile'){ const tw = s.w*.58, th = s.h*.58, R = [[0,0,s.w,s.h]]; for(const fy of [0,1]) for(const fx of [0,1]) R.push([fx*(s.w-tw), fy*(s.h-th), tw, th]); return R; }
-  return [[0,0,s.w,s.h]];
+// 자동 정밀: 화면을 조각(가로 화면 3x2, 세로 화면 2x3)으로 나누고 매번 한 조각씩 돌아가며 크게 본다.
+function tileGrid(vx, vy, vw, vh){
+  const land = vw >= vh, cols = land ? 3 : 2, rows = land ? 2 : 3, tw = Math.min(vw, vw/cols*1.3), th = Math.min(vh, vh/rows*1.3), R = [];
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) R.push([vx + (cols>1 ? c*(vw-tw)/(cols-1) : 0), vy + (rows>1 ? r*(vh-th)/(rows-1) : 0), tw, th]);
+  return R;
 }
+let tileIdx = 0, autoPhase = 0, lastInferMs = 30;
+function regionRects(s){
+  const reg = $('#region').value, [vx,vy,vw,vh] = visRect(s), full = {r:[vx,vy,vw,vh], full:true};
+  if(reg==='zoom'){ const w = vw/2, h = vh/2; return [{r:[vx+(vw-w)/2, vy+(vh-h)/2, w, h], full:true}]; }
+  if(reg==='tile') return [full, ...tileGrid(vx,vy,vw,vh).map(r=>({r, tile:true}))];
+  if(reg==='auto'){
+    const g = tileGrid(vx,vy,vw,vh), t = {r:g[tileIdx % g.length], tile:true};
+    // 빠른 기기는 매번 전체 + 조각 하나, 느린 기기는 전체와 조각을 번갈아 본다.
+    if(lastInferMs < 70) return [full, t];
+    return (autoPhase++ % 2 === 0) ? [full] : [t];
+  }
+  return [full];
+}
+let lastCov = [];
 async function detect(s, th){
-  let c = [];
-  for(const r of regionRects(s)) c = c.concat(await runOn(s, ...r, th));
+  let c = []; const R = regionRects(s);
+  for(const g of R){ const d = await runOn(s, ...g.r, th); if(g.tile) for(const b of d) b.viaTile = true; c = c.concat(d); if(g.tile) tileIdx++; }
+  lastCov = R;
   c.sort((p,q)=>q.score-p.score);
   const keep = [], it = num('iou')/100;
-  for(const b of c){ if(keep.every(k=>iou(k,b)<it)) keep.push(b); if(keep.length>=30) break; }
+  // 조각 가장자리에서 잘린 박스가 큰 박스 안에 겹쳐 남지 않게, 대부분 포개지는 박스도 같은 것으로 본다.
+  const contained = (k, b) => { const x1 = Math.max(k.x,b.x), y1 = Math.max(k.y,b.y), x2 = Math.min(k.x+k.w,b.x+b.w), y2 = Math.min(k.y+k.h,b.y+b.h); const i = Math.max(0,x2-x1)*Math.max(0,y2-y1); return i / Math.min(k.w*k.h, b.w*b.h) > .6; };
+  for(const b of c){ if(keep.every(k=>iou(k,b)<it && !contained(k,b))) keep.push(b); if(keep.length>=40) break; }
   return keep;
 }
 
@@ -583,7 +712,7 @@ function paintReadout(s){
   const z = $('#rZone');
   if(!target){
     $('#rName').innerHTML = '<b>' + (detState==='ok' ? '목표 없음' : '대기') + '</b>';
-    $('#rX').textContent = '-'; $('#rY').textContent = '-'; $('#rConf').textContent = '-'; $('#rPx').textContent = '-'; $('#rSize').textContent = '-';
+    $('#rX').textContent = '-'; $('#rY').textContent = '-'; $('#rConf').textContent = '-'; $('#rPx').textContent = '-'; $('#rSize').textContent = '-'; $('#rAng').textContent = '-';
     $('#rDir').textContent = detState==='ok' ? '화면에 꽁초가 없습니다.' : detState==='pending' ? '감지 모델이 준비되면 시작합니다.' : '감지 모델을 불러오는 중입니다.';
     z.textContent = '영역 밖'; z.className = 'pill';
   }else{
@@ -596,11 +725,55 @@ function paintReadout(s){
     z.textContent = t.inZone ? '집기 가능' : '이동 필요'; z.className = 'pill' + (t.inZone ? ' go' : '');
     $('#rPx').textContent = Math.round(t.cx)+', '+Math.round(t.cy)+' px';
     $('#rSize').textContent = Math.round(t.wmm)+' × '+Math.round(t.hmm)+' mm';
+    $('#rAng').textContent = target.ang==null ? '모름' : angTxt(target.ang) + ' (가로 0°, 시계 방향 +)';
   }
   $('#detList').innerHTML = boxes.length ? boxes.slice(0,12).map(b=>{ const sub = b.sub && subCls(b.sub); const tt = telemetry(s,b);
     return `<div class="det${b===target&&mode!=='watch'?' t':''}" style="--k:${b===target&&mode!=='watch'?ACC:(sub?sub.color:'#64666b')}"><i></i><span>${esc(sub?sub.name:'꽁초')}${b===target && mode!=='watch'?' (목표)':''}</span><span class="mm">${mode==='watch' ? (sub ? '종류 '+Math.round(b.subConf*100)+'%' : '') : sgn(tt.dx)+', '+sgn(tt.dy)+' mm'}</span><span>${Math.round(b.score*100)}%</span></div>`; }).join('')
     : '<span class="empty">감지된 꽁초가 없습니다.</span>';
 }
+
+
+/* ---------- 꽁초 방향 (집게를 돌릴 각도) ---------- */
+// 박스 안에서 바닥(테두리 색)과 다른 픽셀들의 분포 방향(주성분)을 구한다. 0도 = 화면 가로, + = 시계 방향.
+const angC = document.createElement('canvas'); angC.width = angC.height = 48; const angX = angC.getContext('2d', {willReadFrequently:true});
+function estAngle(s, b){
+  const N = 48, pad = .12, x = b.x - b.w*pad, y = b.y - b.h*pad, w = b.w*(1+2*pad), h = b.h*(1+2*pad);
+  angX.drawImage(s.el, x, y, w, h, 0, 0, N, N);
+  const d = angX.getImageData(0,0,N,N).data;
+  let br = 0, bg = 0, bb = 0, bn = 0;
+  for(let i=0;i<N;i++) for(const j of [i*4, ((N-1)*N+i)*4, (i*N)*4, (i*N+N-1)*4]){ br += d[j]; bg += d[j+1]; bb += d[j+2]; bn++; }
+  br /= bn; bg /= bn; bb /= bn;
+  const W = new Float32Array(N*N); let mx = 0;
+  for(let i=0;i<N*N;i++){ const j = i*4, v = Math.hypot(d[j]-br, d[j+1]-bg, d[j+2]-bb); W[i] = v; if(v > mx) mx = v; }
+  const thr = Math.max(28, mx*.45), sx = w/N, sy = h/N;
+  let sw = 0, ax = 0, ay = 0;
+  for(let yy=0; yy<N; yy++) for(let xx=0; xx<N; xx++){ const v = W[yy*N+xx]; if(v < thr) continue; sw += v; ax += v*xx*sx; ay += v*yy*sy; }
+  if(sw < 1) return null;
+  ax /= sw; ay /= sw; let cxx = 0, cyy = 0, cxy = 0;
+  for(let yy=0; yy<N; yy++) for(let xx=0; xx<N; xx++){ const v = W[yy*N+xx]; if(v < thr) continue; const dx = xx*sx-ax, dy = yy*sy-ay; cxx += v*dx*dx; cyy += v*dy*dy; cxy += v*dx*dy; }
+  const tr = cxx+cyy, q = Math.sqrt(Math.max(0, tr*tr/4 - (cxx*cyy - cxy*cxy))), l1 = tr/2 + q, l2 = tr/2 - q;
+  return {deg: .5*Math.atan2(2*cxy, cxx-cyy)*180/Math.PI, elong: l2 > 1e-6 ? Math.sqrt(l1/l2) : 9};
+}
+function angles(s){
+  const now = performance.now();
+  for(const b of boxes.slice(0,8)){
+    const t = b.track; if(!t || b.center) continue;
+    if(t.angAt && now - t.angAt < 150){ b.ang = t.ang; continue; }
+    t.angAt = now; let r = null; try{ r = estAngle(s, b); }catch(_){}
+    let deg = r && r.elong >= 1.6 ? r.deg : b.w > b.h*1.4 ? 0 : b.h > b.w*1.4 ? 90 : null;
+    if(deg != null){
+      if(t.ang == null) t.ang = deg;
+      else { const p = t.ang*Math.PI/90, q = deg*Math.PI/90, X = Math.cos(p)*.6 + Math.cos(q)*.4, Y = Math.sin(p)*.6 + Math.sin(q)*.4; t.ang = Math.atan2(Y, X)*90/Math.PI; }
+    }
+    b.ang = t.ang;
+  }
+}
+function angLine(x, y, w, h, ang, mir, col){
+  if(ang == null) return;
+  const a = (mir ? -ang : ang)*Math.PI/180, L = Math.max(w, h)*.6, cx = x + w/2, cy = y + h/2;
+  octx.strokeStyle = col; octx.lineWidth = 1.5; octx.beginPath(); octx.moveTo(cx - Math.cos(a)*L, cy - Math.sin(a)*L); octx.lineTo(cx + Math.cos(a)*L, cy + Math.sin(a)*L); octx.stroke();
+}
+const angTxt = a => a == null ? '-' : (Math.round(a) > 0 ? '+' : '') + Math.round(a) + '°';
 
 /* ---------- overlay ---------- */
 function draw(s){
@@ -622,15 +795,16 @@ function draw(s){
   for(const b of boxes){ if(b===target) continue; const sub = b.sub && subCls(b.sub); const [x,y,w,h] = R(b);
     if(!b.locked) octx.setLineDash([3,3]);
     octx.strokeStyle = sub ? sub.color : BOX; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); octx.setLineDash([]);
-    if(b.locked) tag(x, y, '#'+b.id+' '+(sub?sub.name:'꽁초')+' '+Math.round(b.score*100)+'%'); }
+    if(b.locked){ angLine(x, y, w, h, b.ang, mir, 'rgba(255,255,255,.55)'); tag(x, y, '#'+b.id+' '+(sub?sub.name:'꽁초')+' '+Math.round(b.score*100)+'%'); } }
   if(target){ const [x,y,w,h] = R(target), t = target.t;
     brackets(x, y, w, h, TGT, 2.5, target.lockedAt);
     const tx = x+w/2, ty = y+h/2;
     if(on('#zoneBtn') && !t.inZone){ octx.strokeStyle = 'rgba(255,255,255,.45)'; octx.lineWidth = 1; octx.setLineDash([2,4]); octx.beginPath(); octx.moveTo(zx,zy); octx.lineTo(tx,ty); octx.stroke(); octx.setLineDash([]);
       tag((zx+tx)/2 + 6, (zy+ty)/2, sgn(t.dx)+', '+sgn(t.dy)+' mm', true); }
+    angLine(x, y, w, h, target.ang, mir, ACC);
     octx.fillStyle = ACC; octx.beginPath(); octx.arc(tx,ty,3.5,0,7); octx.fill();
     const sub = target.sub && subCls(target.sub);
-    tag(x, y, (target.id?'#'+target.id+' ':'')+(sub?sub.name:'꽁초')+' '+Math.round(target.score*100)+'%'+(target.locked?' 락온':''), false, true);
+    tag(x, y, (target.id?'#'+target.id+' ':'')+(sub?sub.name:'꽁초')+' '+Math.round(target.score*100)+'%'+(target.locked?' 락온':'')+(target.ang!=null?' '+angTxt(target.ang):''), false, true);
   }
 }
 function drawWatch(s){
@@ -643,7 +817,7 @@ function drawWatch(s){
   if(((collecting && !target) || ($('#centerOn').checked && subReady() && counts.bg))){ const side = Math.min(s.w,s.h)*0.4*f.k, cx = f.dx + s.w*f.k/2, cy = f.dy + s.h*f.k/2; octx.setLineDash([4,4]); octx.strokeStyle = 'rgba(255,255,255,.7)'; octx.lineWidth = 1; octx.strokeRect(cx-side/2, cy-side/2, side, side); octx.setLineDash([]); }
   octx.font = '500 12px "Pretendard Variable",Pretendard,system-ui,sans-serif'; octx.textBaseline = 'middle';
   for(const b of boxes){ if(b.center) continue; const sub = b.sub && subCls(b.sub); const [x,y,w,h] = R(b), col = sub ? sub.color : '#ffffff';
-    if(b.locked){ octx.strokeStyle = 'rgba(255,255,255,.18)'; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); brackets(x,y,w,h,col,2.5,b.lockedAt);
+    if(b.locked){ octx.strokeStyle = 'rgba(255,255,255,.18)'; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); brackets(x,y,w,h,col,2.5,b.lockedAt); angLine(x, y, w, h, b.ang, mir, 'rgba(255,255,255,.7)');
       tag(x, y, '#'+b.id+' '+(sub ? sub.name : '꽁초')+' '+Math.round((sub ? b.subConf : b.score)*100)+'%', false, true); }
     else { octx.setLineDash([3,3]); octx.strokeStyle = 'rgba(255,255,255,.6)'; octx.lineWidth = 1; octx.strokeRect(x+.5,y+.5,w,h); octx.setLineDash([]); } }
   drawRegion(s, f, R);
@@ -654,7 +828,7 @@ function drawWatch(s){
 }
 function drawRegion(s, f, R){
   if($('#region').value!=='zoom') return;
-  const [rx,ry,rw,rh] = regionRects(s)[0], [x,y,w,h] = R({x:rx,y:ry,w:rw,h:rh});
+  const [rx,ry,rw,rh] = regionRects(s)[0].r, [x,y,w,h] = R({x:rx,y:ry,w:rw,h:rh});
   octx.fillStyle = 'rgba(0,0,0,.28)'; octx.beginPath(); octx.rect(f.dx, f.dy, s.w*f.k, s.h*f.k); octx.rect(x, y+h, w, -h); octx.fill('evenodd');
   octx.strokeStyle = 'rgba(255,255,255,.35)'; octx.lineWidth = 1; octx.strokeRect(x+.5, y+.5, w, h);
 }
@@ -673,24 +847,30 @@ function tag(x, y, text, mid, strong){
 }
 
 /* ---------- source: camera / file ---------- */
+let cams = [], curCam = '';
+const isUltra = l => /ultra ?wide|초광각|울트라/i.test(l||''), isTele = l => /tele|망원/i.test(l||''), isBack = l => /back|rear|후면|environment|facing back/i.test(l||'');
 async function listCams(sel){
-  try{ const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
-    $('#camSel').innerHTML = devs.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'카메라 '+(i+1))}</option>`).join('') || '<option value="">카메라 없음</option>';
-    if(sel) $('#camSel').value = sel; }catch(_){}
+  try{ cams = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+    const html = cams.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'카메라 '+(i+1))}</option>`).join('') || '<option value="">카메라 없음</option>';
+    $('#camSel').innerHTML = html; $('#camSel2').innerHTML = html;
+    if(sel){ curCam = sel; $('#camSel').value = sel; $('#camSel2').value = sel; } }catch(_){}
+  paintZoomChips();
 }
 async function startCam(deviceId){
   stopFile();
   if(stream) stream.getTracks().forEach(t=>t.stop());
   if(!navigator.mediaDevices?.getUserMedia){ showMsg('이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬이나 엣지로 열거나 파일로 테스트하세요.'); return; }
   const w = num('resSel'), h = w===640 ? 480 : w===1280 ? 720 : 1080;
+  // 폰을 세로로 들고 있으면 처음부터 세로 영상을 요청한다. (가로로 요청하면 중간에 세로로 바뀌면서 화면이 한 번 줄었다 커진다)
+  const portrait = isPhone() && innerHeight > innerWidth, size = portrait ? {width:{ideal:h}, height:{ideal:w}} : {width:{ideal:w}, height:{ideal:h}};
+  torchOn = false;
   try{
-    stream = await navigator.mediaDevices.getUserMedia({audio:false, video: Object.assign({width:{ideal:w}, height:{ideal:h}}, deviceId ? {deviceId:{exact:deviceId}} : {facingMode:'environment'})});
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video: Object.assign(size, deviceId ? {deviceId:{exact:deviceId}} : {facingMode:'environment'})});
     video.srcObject = stream; await video.play(); showMsg(''); srcKind = 'cam'; tracks = []; boxes = []; target = null;
     const st = stream.getVideoTracks()[0].getSettings();
     facing = st.facingMode === 'environment' || /back|rear|후면|environment/i.test(stream.getVideoTracks()[0].label) ? 'environment' : 'user'; applyMirror();
-    await listCams(st.deviceId);
+    setupCaps(); await listCams(st.deviceId);
     $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
-    video.onloadedmetadata = () => $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight;
   }catch(e){
     showMsg(e.name==='NotAllowedError' ? '카메라 권한이 막혀 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 연결하세요.'
       : e.name==='NotFoundError' ? '연결된 카메라가 없습니다. 웹캠을 꽂고 다시 연결하거나 파일로 테스트하세요.'
@@ -698,6 +878,85 @@ async function startCam(deviceId){
       : '카메라를 열지 못했습니다. ('+e.name+')');
   }
 }
+
+/* ---------- 카메라 기능: 줌, 렌즈, 플래시, 야간 보정, 초점 ---------- */
+let zoomHW = null, zoomVal = 1, torchCap = false, torchOn = false, nightOn = false, focusCap = false;
+const camTrack = () => stream && stream.getVideoTracks()[0];
+function setupCaps(){
+  const t = camTrack(); let caps = {}, st = {};
+  try{ caps = t.getCapabilities ? t.getCapabilities() : {}; }catch(_){}
+  try{ st = t.getSettings(); }catch(_){}
+  zoomHW = caps.zoom && caps.zoom.max > caps.zoom.min ? {min:caps.zoom.min, max:Math.min(caps.zoom.max, 10)} : null;
+  zoomVal = zoomHW && st.zoom ? st.zoom : 1; zoomD = 1; applyVideoTransform();
+  torchCap = !!caps.torch;
+  focusCap = !!(caps.pointsOfInterest || (Array.isArray(caps.focusMode) && caps.focusMode.includes('single-shot')));
+  const zr = $('#zoomR'); zr.min = zoomHW ? Math.max(.5, zoomHW.min) : 1; zr.max = (zoomHW ? zoomHW.max : 1) * 3 > 4 ? Math.min(10, (zoomHW ? zoomHW.max : 1)*3) : 4; zr.value = zoomVal;
+  paintCam();
+}
+let zBusy = false, zWant = null;
+async function setZoom(z){
+  const lo = zoomHW ? Math.max(.5, zoomHW.min) : 1, hi = zoomHW ? Math.min(10, zoomHW.max*3) : 4;
+  z = Math.min(hi, Math.max(lo, z)); zoomVal = z;
+  const hw = zoomHW ? Math.min(zoomHW.max, Math.max(zoomHW.min, z)) : 1;
+  zoomD = Math.max(1, z / hw); applyVideoTransform(); paintCam();
+  if(!zoomHW) return;
+  zWant = hw; if(zBusy) return; zBusy = true;
+  try{ while(zWant != null){ const v = zWant; zWant = null; await camTrack().applyConstraints({advanced:[{zoom:v}]}); tracks = []; } }catch(_){}
+  zBusy = false;
+}
+async function setTorch(v){
+  const t = camTrack(); if(!t) return;
+  try{ await t.applyConstraints({advanced:[{torch:v}]}); const st = t.getSettings(); if(v && st.torch !== true) throw new Error('no torch'); torchOn = v; }
+  catch(_){ torchOn = false; if(v) toast('이 브라우저는 플래시를 켤 수 없습니다. 야간 보정을 쓰세요'); }
+  paintCam();
+}
+function setNight(v){ nightOn = v; video.style.filter = v ? 'brightness(1.8) contrast(1.1)' : ''; paintCam(); try{ localStorage.setItem(KEY+'-night', v ? '1' : ''); }catch(_){} }
+function paintCam(){
+  for(const b of document.querySelectorAll('[data-act=torch]')){ b.setAttribute('aria-pressed', String(torchOn)); b.hidden = !(torchCap || (isPhone() && facing==='environment')); }
+  for(const b of document.querySelectorAll('[data-act=night]')) b.setAttribute('aria-pressed', String(nightOn));
+  $('#zoomV').textContent = zoomVal.toFixed(1) + '×'; $('#zoomR').value = zoomVal;
+  $('#camctl').querySelector('input').hidden = srcKind!=='cam';
+  paintZoomChips();
+}
+// 0.5x(초광각) 1x 2x 3x 버튼. 줌을 지원하면 카메라 줌, 아니면 화면 확대(디지털 줌)로 처리한다.
+function paintZoomChips(){
+  const bar = $('#zoombar'); if(!bar) return;
+  const cur = cams.find(c=>c.deviceId===curCam), onUltra = cur && isUltra(cur.label);
+  const ultra = cams.find(c=>isUltra(c.label)), opts = [];
+  if((zoomHW && zoomHW.min <= .6) || (ultra && !onUltra) || onUltra) opts.push(.5);
+  opts.push(1, 2, 3);
+  const eff = onUltra ? .5 * zoomVal : zoomVal;
+  const best = opts.reduce((a,b)=>Math.abs(b-eff) < Math.abs(a-eff) ? b : a);
+  bar.innerHTML = opts.map(v=>`<button type="button" data-z="${v}" aria-pressed="${v===best}">${v===best && Math.abs(eff-v) > .05 ? eff.toFixed(1) : v===.5 ? '.5' : v}×</button>`).join('');
+}
+async function chooseZoom(v){
+  const cur = cams.find(c=>c.deviceId===curCam), onUltra = cur && isUltra(cur.label), ultra = cams.find(c=>isUltra(c.label));
+  if(v < 1 && !(zoomHW && zoomHW.min <= .6) && ultra){ if(!onUltra) await startCam(ultra.deviceId); return; }
+  if(v >= 1 && onUltra){ const main = cams.find(c=>isBack(c.label) && !isUltra(c.label) && !isTele(c.label) && !/dual|triple|듀얼|트리플/i.test(c.label)) || cams.find(c=>isBack(c.label) && !isUltra(c.label)); if(main){ await startCam(main.deviceId); } }
+  setZoom(v);
+}
+$('#zoombar').addEventListener('click', e=>{ const b = e.target.closest('[data-z]'); if(b) chooseZoom(+b.dataset.z); });
+$('#zoomR').addEventListener('input', e=>setZoom(+e.target.value));
+for(const b of document.querySelectorAll('[data-act=torch]')) b.addEventListener('click', ()=>setTorch(!torchOn));
+for(const b of document.querySelectorAll('[data-act=night]')) b.addEventListener('click', ()=>setNight(!nightOn));
+// 두 손가락으로 벌리면 확대, 한 번 누르면 그 자리에 초점
+const ptrs = new Map(); let pinch = null, tapAt = null;
+view.addEventListener('pointerdown', e=>{ if(!isPhone() || e.target.closest('button,.hud-top,.hud-bot,.zoombar')) return; ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY}); tapAt = ptrs.size===1 ? {x:e.clientX, y:e.clientY, t:performance.now()} : null;
+  if(ptrs.size===2){ const [a,b] = [...ptrs.values()]; pinch = {d:Math.hypot(a.x-b.x, a.y-b.y), z:zoomVal}; } });
+view.addEventListener('pointermove', e=>{ if(!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pinch && ptrs.size===2){ const [a,b] = [...ptrs.values()], d = Math.hypot(a.x-b.x, a.y-b.y); setZoom(pinch.z * d / Math.max(20, pinch.d)); } });
+const endPtr = e=>{ if(!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); if(ptrs.size < 2) pinch = null;
+  if(tapAt && e.type==='pointerup' && performance.now() - tapAt.t < 300 && Math.hypot(e.clientX-tapAt.x, e.clientY-tapAt.y) < 12) tapFocus(e.clientX, e.clientY); tapAt = null; };
+view.addEventListener('pointerup', endPtr); view.addEventListener('pointercancel', endPtr);
+async function tapFocus(cx, cy){
+  if(srcKind!=='cam' || !focusCap) return;
+  const r = view.getBoundingClientRect(), s = src(), f = fit(s); let px = (cx - r.left - f.dx)/f.k, py = (cy - r.top - f.dy)/f.k;
+  if(view.classList.contains('mirror')) px = s.w - px;
+  const ring = $('#focus'); ring.style.left = (cx - r.left) + 'px'; ring.style.top = (cy - r.top) + 'px'; ring.classList.add('on'); setTimeout(()=>ring.classList.remove('on'), 600);
+  try{ await camTrack().applyConstraints({advanced:[{pointsOfInterest:[{x:Math.min(1,Math.max(0,px/s.w)), y:Math.min(1,Math.max(0,py/s.h))}], focusMode:'single-shot'}]}); }catch(_){}
+}
+video.addEventListener('resize', ()=>{ tracks = []; boxes = []; target = null; if(srcKind==='cam') $('#srcBadge').textContent = '카메라 '+video.videoWidth+'×'+video.videoHeight; });
+
 function stopFile(){ if(fileUrl){ URL.revokeObjectURL(fileUrl); fileUrl = null; } view.classList.remove('photo'); video.removeAttribute('src'); $('#fileBtn span').textContent = '파일 열기'; }
 async function openFile(file){
   try{
@@ -885,10 +1144,10 @@ function message(){
   if($('#fmt').value==='json'){
     if(!target) return JSON.stringify({t:Date.now(), n, tgt:null});
     const t = target.t, sub = target.sub && subCls(target.sub);
-    return JSON.stringify({t:Date.now(), n, tgt:{cls: sub?target.sub:'butt', conf:+target.score.toFixed(3), x:Math.round(t.dx), y:Math.round(t.dy), in:t.inZone, px:[Math.round(t.cx),Math.round(t.cy)], stable:streak}});
+    return JSON.stringify({t:Date.now(), n, tgt:{cls: sub?target.sub:'butt', conf:+target.score.toFixed(3), x:Math.round(t.dx), y:Math.round(t.dy), ang: target.ang==null ? null : Math.round(target.ang), in:t.inZone, px:[Math.round(t.cx),Math.round(t.cy)], stable:streak}});
   }
   if(!target) return 'N,'+n;
-  const t = target.t; return ['T', Math.round(t.dx), Math.round(t.dy), target.score.toFixed(2), t.inZone?1:0, n].join(',');
+  const t = target.t; return ['T', Math.round(t.dx), Math.round(t.dy), target.score.toFixed(2), t.inZone?1:0, n, target.ang==null ? '' : Math.round(target.ang)].join(',');
 }
 function maybeSend(now){
   if(mode==='watch') return;
@@ -905,25 +1164,43 @@ const idb = (()=>{ let p; const open = () => p || (p = new Promise((res, rej) =>
   const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('frames', mode); const q = fn(t.objectStore('frames')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
   return {put:d=>run('readwrite', st=>st.put(d)), all:()=>run('readonly', st=>st.getAll()), del:n=>run('readwrite', st=>st.delete(n)), clear:()=>run('readwrite', st=>st.clear())}; })();
 let ds = []; let lastCap = 0;
-async function capture(s, reason){
+let splitVal = 'train', tagSet = new Set();
+async function capture(s, reason, extra){
   if(!s.w) return;
   const maxW = 1280, k = Math.min(1, maxW/s.w), c = document.createElement('canvas'); c.width = Math.round(s.w*k); c.height = Math.round(s.h*k);
   c.getContext('2d').drawImage(s.el, 0, 0, c.width, c.height);
   const blob = await new Promise(r=>c.toBlob(r, 'image/jpeg', .9));
-  const labels = boxes.filter(b=>!b.center).map(b=>[(b.x+b.w/2)/s.w, (b.y+b.h/2)/s.h, b.w/s.w, b.h/s.h]);
+  const src_ = (extra && extra.boxes) || boxes.filter(b=>!b.center);
+  const labels = src_.map(b=>[(b.x+b.w/2)/s.w, (b.y+b.h/2)/s.h, b.w/s.w, b.h/s.h]).map(l=>l.map(v=>Math.min(1, Math.max(0, v))));
   const th = document.createElement('canvas'); th.width = th.height = 120;
   const side = Math.min(c.width, c.height); th.getContext('2d').drawImage(c, (c.width-side)/2, (c.height-side)/2, side, side, 0, 0, 120, 120);
   const name = 'ggongcam_' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,17);
-  const d = {name, blob, labels, w:c.width, h:c.height, thumb:th.toDataURL('image/jpeg',.7), edited:false};
+  const d = {name, blob, labels, w:c.width, h:c.height, thumb:th.toDataURL('image/jpeg',.7), edited:false, split:splitVal, tags:[...tagSet], review:!!(extra && extra.review)};
+  if(ds.some(x=>x.name===name)) d.name = name + String(performance.now()|0).slice(-3);
   ds.push(d); paintDs();
+  // 사람 얼굴이 크게 나온 사진은 업로드에서 뺀다 (저장소가 공개라서)
+  hasFace(c).then(async f => { if(f){ d.face = true; try{ await idb.put(d); }catch(_){} paintDs(); toast('얼굴이 보이는 사진이라 업로드에서 뺐습니다'); } });
   try{ await idb.put(d); }catch(e){ $('#dsNote').textContent = '기기 저장 공간에 넣지 못했습니다. 새로고침 전에 ZIP으로 내보내세요.'; }
-  if(reason!=='auto'){ toast('저장했습니다 (박스 '+labels.length+'개)'); if(navigator.vibrate) navigator.vibrate(25); }
+  if(reason==='manual' || !reason){ toast((d.split==='test'?'시험용으로 ':'')+'저장했습니다 (박스 '+labels.length+'개)'); if(navigator.vibrate) navigator.vibrate(25); }
   if($('#upAuto')?.checked) uploadPending(true);
 }
+
+/* 얼굴 확인 (BlazeFace, 처음 저장할 때 한 번 불러온다) */
+let faceNet = null, faceLoad = null;
+function loadFace(){ return faceLoad || (faceLoad = (async()=>{ if(typeof tf==='undefined') return; if(typeof blazeface==='undefined') await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0/dist/blazeface.min.umd.js'); faceNet = await blazeface.load({maxFaces:3, scoreThreshold:.8}); })().catch(e=>{ console.warn('얼굴 확인 모델을 못 불러옴', e); faceNet = null; })); }
+async function hasFace(canvas){
+  try{ await loadFace(); if(!faceNet) return false;
+    const k = Math.min(1, 640/Math.max(canvas.width, canvas.height)), c = document.createElement('canvas'); c.width = Math.round(canvas.width*k); c.height = Math.round(canvas.height*k); c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+    const p = await faceNet.estimateFaces(c, false);
+    return p.some(f => { const pr = Array.isArray(f.probability) ? f.probability[0] : (f.probability && f.probability.dataSync ? f.probability.dataSync()[0] : 1); return pr > .85 && (f.bottomRight[0]-f.topLeft[0]) > c.width*.05; });
+  }catch(e){ return false; }
+}
+
 function paintDs(){
   $('#dsN').textContent = ds.length; $('#dsB').textContent = ds.reduce((a,d)=>a+d.labels.length,0); $('#dsE').textContent = ds.filter(d=>!d.labels.length).length;
-  $('#dsGrid').innerHTML = ds.slice(-24).reverse().map(d=>`<figure><button type="button" data-ed="${esc(d.name)}" aria-label="박스 고치기"><img src="${d.thumb}" alt=""></button><figcaption>${d.labels.length}${d.edited?' 확인':''}${d.uploaded?' 보냄':''}</figcaption></figure>`).join('');
+  $('#dsGrid').innerHTML = ds.slice(-24).reverse().map(d=>`<figure><button type="button" data-ed="${esc(d.name)}" aria-label="박스 고치기"><img src="${d.thumb}" alt=""></button><figcaption class="${d.face && !d.faceOk ? 'warn' : ''}">${d.face && !d.faceOk ? '얼굴 ' : ''}${d.split==='test'?'시험 ':''}${d.review && !d.edited ? '검수 ' : ''}${d.labels.length}${d.edited?' 확인':''}${d.uploaded?' 보냄':''}</figcaption></figure>`).join('');
   const fc = $('#fabCount'); if(fc) fc.textContent = ds.length;
+  const rv = ds.filter(needsReview).length; $('#review').hidden = !rv; $('#reviewN').textContent = `검수할 사진 ${rv}장`;
   if(typeof paintUp==='function') paintUp();
 }
 function maybeAutoCap(s, now){
@@ -933,12 +1210,25 @@ function maybeAutoCap(s, now){
   if(when==='low' && !(top>=.25 && top<=.6)) return;
   lastCap = now; capture(s, 'auto');
 }
+// 꽁초를 새로 락온할 때마다 자동 저장 (1.5초 간격)
+let lastLockCap = 0, lastDoubt = 0;
+function maybeLockCap(s, now){
+  if(!$('#lockCap').checked || !newLocks.length || now - lastLockCap < 1500 || srcKind==='photo') return;
+  lastLockCap = now; capture(s, 'lock'); if(navigator.vibrate) navigator.vibrate(10);
+}
+// 기준보다 조금 낮게 본 후보(기준의 50~100%)가 있으면 '검수 필요'로 따로 저장. 후보 박스를 라벨로 같이 넣어두고 사람이 맞음/틀림을 고른다.
+function maybeDoubtCap(s, now){
+  if(!$('#doubtCap').checked || !weak.length || now - lastDoubt < 3000 || srcKind==='photo') return;
+  const extra = weak.filter(w => !boxes.some(b => iou(b, w) > .3));
+  if(!extra.length) return;
+  lastDoubt = now; capture(s, 'doubt', {review:true, boxes:[...boxes.filter(b=>!b.center), ...extra]});
+}
 async function exportZip(){
   if(!ds.length){ $('#dsNote').textContent = '저장된 사진이 없습니다. 저장 버튼이나 S 키로 먼저 모으세요.'; return; }
   if(typeof JSZip==='undefined'){ $('#dsNote').textContent = 'ZIP 라이브러리를 불러오지 못했습니다. 새로고침해 보세요.'; return; }
   $('#dsNote').textContent = 'ZIP 만드는 중...';
   const z = new JSZip();
-  for(const d of ds){ z.file('images/'+d.name+'.jpg', d.blob); z.file('labels/'+d.name+'.txt', d.labels.map(l=>'0 '+l.map(v=>v.toFixed(6)).join(' ')).join('\n') + (d.labels.length?'\n':'')); }
+  for(const d of ds){ if(d.face && !d.faceOk) continue; z.file((d.split==='test'?'test/':'')+'images/'+d.name+'.jpg', d.blob); z.file((d.split==='test'?'test/':'')+'labels/'+d.name+'.txt', d.labels.map(l=>'0 '+l.map(v=>v.toFixed(6)).join(' ')).join('\n') + (d.labels.length?'\n':'')); }
   z.file('data.yaml', 'path: .\ntrain: images\nval: images\nnames:\n  0: butt\n');
   z.file('README.txt', '꽁줍이 비전에서 모은 사진. labels 는 YOLO 형식(클래스 0 = 꽁초). 확인 표시가 없는 사진은 감지 모델이 자동으로 단 박스라 틀린 것이 섞여 있을 수 있다.\n');
   const blob = await z.generateAsync({type:'blob'});
@@ -949,24 +1239,33 @@ async function exportZip(){
 /* 학습 저장소로 보내기 */
 let uploading = false;
 const blobB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(b); });
-function paintUp(){ $('#upN').textContent = ds.filter(d=>!d.uploaded).length; $('#upDone').textContent = ds.filter(d=>d.uploaded).length; }
+// 보내도 되는 사진: 얼굴 없음, 애매한 장면은 검수 끝, 시험용은 박스 확인 끝
+const needsReview = d => !d.uploaded && ((d.review && !d.edited) || (d.split==='test' && !d.edited));
+const canSend = d => !d.uploaded && !(d.face && !d.faceOk) && !needsReview(d);
+function paintUp(){ const n = ds.filter(d=>!d.uploaded).length; $('#upN').textContent = n; $('#upDone').textContent = ds.filter(d=>d.uploaded).length;
+  $('#pUpN').textContent = ds.filter(canSend).length; const h = $('#hUp'); h.hidden = !n; h.textContent = (navigator.onLine ? '안 보낸 사진 ' : '오프라인, 대기 ') + n + '장'; }
+addEventListener('online', ()=>{ paintUp(); if($('#upAuto').checked) uploadPending(true); });
+addEventListener('offline', paintUp);
+setInterval(()=>{ if($('#upAuto').checked && navigator.onLine && ds.some(canSend)) uploadPending(true); }, 60000);
 async function uploadPending(quiet){
   if(uploading) return; const code = $('#upCode').value.trim();
   if(!code){ $('#upNote').textContent = '업로드 비밀번호를 먼저 넣으세요.'; if(!quiet) $('#upCode').focus(); return; }
-  const todo = ds.filter(d=>!d.uploaded); if(!todo.length){ if(!quiet) $('#upNote').textContent = '보낼 사진이 없습니다.'; return; }
+  const todo = ds.filter(canSend), held = ds.filter(d=>!d.uploaded && !canSend(d)).length;
+  if(!todo.length){ if(!quiet) $('#upNote').textContent = held ? `보낼 수 있는 사진이 없습니다. 확인이 필요한 사진 ${held}장은 박스를 확인하면 보냅니다.` : '보낼 사진이 없습니다.'; return; }
+  if(!navigator.onLine){ $('#upNote').textContent = `인터넷이 끊겨 있습니다. 연결되면 ${todo.length}장을 자동으로 보냅니다.`; return; }
   uploading = true; $('#upBtn').disabled = true; let sent = 0;
   try{
     for(let i=0; i<todo.length; i+=8){
       const batch = todo.slice(i, i+8);
       $('#upNote').textContent = `보내는 중 ${sent}/${todo.length}`;
-      const items = []; for(const d of batch) items.push({name:d.name, jpg: await blobB64(d.blob), labels:d.labels});
+      const items = []; for(const d of batch) items.push({name:d.name, jpg: await blobB64(d.blob), labels:d.labels, split:d.split||'train', tags:d.tags||[]});
       const r = await fetch('api/upload', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({code, device: /iPhone|Android/i.test(navigator.userAgent) ? (navigator.userAgent.match(/iPhone|Android/i)[0]) : 'PC', items})});
       const j = await r.json().catch(()=>({error:'서버 응답을 읽지 못했습니다.'}));
       if(!r.ok || !j.ok) throw new Error(j.error || ('서버 오류 '+r.status));
       for(const d of batch){ d.uploaded = true; try{ await idb.put(d); }catch(_){} }
       sent += batch.length; paintUp();
     }
-    $('#upNote').textContent = `${sent}장을 보냈습니다. 새벽 2시 학습에 들어갑니다.`; if(!quiet) toast(sent+'장 보냈습니다');
+    $('#upNote').textContent = `${sent}장을 보냈습니다. 새벽 2시 학습에 들어갑니다.` + (held ? ` 확인이 필요한 사진 ${held}장은 남겨뒀습니다.` : ''); if(!quiet) toast(sent+'장 보냈습니다');
   }catch(e){ $('#upNote').textContent = (sent ? sent+'장 보낸 뒤 멈췄습니다. ' : '') + e.message; }
   finally{ uploading = false; $('#upBtn').disabled = false; paintDs(); }
 }
@@ -982,7 +1281,10 @@ const edc = () => $('#edCanvas');
 async function openEditor(name){
   const d = ds.find(x=>x.name===name); if(!d) return;
   const img = await createImageBitmap(d.blob);
-  ed = {d, img, boxes: d.labels.map(l=>({x:l[0]-l[2]/2, y:l[1]-l[3]/2, w:l[2], h:l[3]})), sel:-1, drag:null};
+  ed = {d, img, boxes: d.labels.map(l=>({x:l[0]-l[2]/2, y:l[1]-l[3]/2, w:l[2], h:l[3]})), sel:-1, drag:null, queue: reviewing};
+  $('#edNext').hidden = !reviewing; $('#edSave').hidden = !!reviewing;
+  $('#edHint').textContent = reviewing ? '꽁초가 아닌 박스는 눌러서 지우고, 빠진 꽁초는 드래그로 그린 뒤 맞음을 누르세요.' : '빈 곳을 드래그하면 박스가 생기고, 박스를 누르면 선택됩니다.';
+  $('#edWarn').hidden = !(d.face && !d.faceOk); $('#edFaceOk').hidden = !(d.face && !d.faceOk);
   $('#editor').classList.add('on'); edDraw();
 }
 function edGeom(){ const c = edc(), r = c.getBoundingClientRect(), k = Math.min(r.width/ed.img.width, r.height/ed.img.height); return {r, k, dx:(r.width-ed.img.width*k)/2, dy:(r.height-ed.img.height*k)/2, W:ed.img.width*k, H:ed.img.height*k}; }
@@ -993,71 +1295,91 @@ function edDraw(){
   x.drawImage(ed.img, g.dx, g.dy, g.W, g.H);
   const all = ed.drag ? [...ed.boxes, norm(ed.drag)] : ed.boxes;
   all.forEach((b,i)=>{ x.strokeStyle = i===ed.sel ? ACC : '#ffffff'; x.lineWidth = i===ed.sel ? 3 : 2; x.strokeRect(g.dx+b.x*g.W, g.dy+b.y*g.H, b.w*g.W, b.h*g.H); });
-  $('#edInfo').textContent = `박스 ${ed.boxes.length}개` + (ed.sel>=0 ? ', 선택됨' : '');
+  $('#edInfo').textContent = (ed.queue ? `검수 ${ds.filter(needsReview).length}장 남음, ` : '') + (ed.d.split==='test' ? '시험용, ' : '') + `박스 ${ed.boxes.length}개` + (ed.sel>=0 ? ', 선택됨' : '');
   $('#edDel').disabled = ed.sel < 0;
 }
 const norm = d => ({x:Math.min(d.x0,d.x1), y:Math.min(d.y0,d.y1), w:Math.abs(d.x1-d.x0), h:Math.abs(d.y1-d.y0)});
 function edPt(e){ const g = edGeom(); return {x:Math.min(1,Math.max(0,(e.clientX-g.r.left-g.dx)/g.W)), y:Math.min(1,Math.max(0,(e.clientY-g.r.top-g.dy)/g.H))}; }
-function closeEditor(){ $('#editor').classList.remove('on'); ed = null; }
+function closeEditor(){ $('#editor').classList.remove('on'); ed = null; reviewing = false; }
+let reviewing = false;
+function nextReview(){ const d = ds.find(needsReview); if(!d){ closeEditor(); toast('검수할 사진이 더 없습니다'); return; } reviewing = true; openEditor(d.name); }
 
 /* ---------- tracker ---------- */
 let tracks = [], nextId = 1, lastVib = 0;
 const lockN = () => Math.max(2, num('stab'));
-function updateTracks(dets){
-  const used = new Set(), now = performance.now();
+// 조각에서만 잡힌 작은 꽁초는 그 조각을 다시 볼 때까지 '안 보임'으로 치지 않는다.
+const need = t => t.viaTile ? Math.max(2, Math.ceil(lockN()/3)) : lockN();
+const inside = (r, x, y) => x >= r[0] && x <= r[0]+r[2] && y >= r[1] && y <= r[1]+r[3];
+let newLocks = [];
+function updateTracks(dets, cov){
+  const used = new Set(), now = performance.now(); cov = cov || [{full:true}];
   for(const t of tracks){
     let best = -1, bv = .25;
     dets.forEach((d,i)=>{ if(used.has(i)) return; const v = iou(t.box, d); if(v > bv){ bv = v; best = i; } });
     if(best >= 0){ const d = dets[best], a = .6; used.add(best);
       t.box = {x:t.box.x+(d.x-t.box.x)*a, y:t.box.y+(d.y-t.box.y)*a, w:t.box.w+(d.w-t.box.w)*a, h:t.box.h+(d.h-t.box.h)*a};
-      t.score = d.score; t.hits++; t.miss = 0;
-      if(t.hits === lockN()){ t.lockedAt = now; if(navigator.vibrate && now - lastVib > 800 && matchMedia('(pointer:coarse)').matches){ navigator.vibrate(15); lastVib = now; } }
-    }else t.miss++;
+      t.score = d.score; t.hits++; t.miss = 0; t.seenAt = now; t.viaTile = !!d.viaTile;
+      if(!t.lockedAt && t.hits >= need(t)){ t.lockedAt = now; newLocks.push(t); if(navigator.vibrate && now - lastVib > 800 && matchMedia('(pointer:coarse)').matches){ navigator.vibrate(15); lastVib = now; } }
+    }else{
+      const cx = t.box.x+t.box.w/2, cy = t.box.y+t.box.h/2;
+      if(cov.some(g => (g.full && !t.viaTile) || (g.tile && inside(g.r, cx, cy)))) t.miss++;
+    }
   }
-  dets.forEach((d,i)=>{ if(!used.has(i)) tracks.push({id:nextId++, box:{x:d.x,y:d.y,w:d.w,h:d.h}, score:d.score, hits:1, miss:0}); });
-  tracks = tracks.filter(t => t.miss <= (t.hits >= lockN() ? 8 : 1));
-  const minHits = $('#showTentative')?.checked ? 2 : lockN();
-  return tracks.filter(t => t.hits >= minHits && t.miss <= 3).map(t => ({...t.box, score:t.score, id:t.id, track:t, locked:t.hits >= lockN(), lockedAt:t.lockedAt, sub:t.sub, subConf:t.subConf}));
+  dets.forEach((d,i)=>{ if(!used.has(i)) tracks.push({id:nextId++, box:{x:d.x,y:d.y,w:d.w,h:d.h}, score:d.score, hits:1, miss:0, seenAt:now, viaTile:!!d.viaTile}); });
+  tracks = tracks.filter(t => t.lockedAt ? (t.miss <= 8 && now - t.seenAt < 3000) : (t.miss <= 1 && now - t.seenAt < (t.viaTile ? 2500 : 500)));
+  const show = t => $('#showTentative')?.checked ? t.hits >= 2 : !!t.lockedAt;
+  return tracks.filter(t => show(t) && t.miss <= 3).map(t => ({...t.box, score:t.score, id:t.id, track:t, locked:!!t.lockedAt, lockedAt:t.lockedAt, sub:t.sub, subConf:t.subConf, ang:t.ang}));
 }
 
 /* ---------- main loop ---------- */
-let lastPaint = 0;
+let lastPaint = 0, hudSleepy = false;
 async function infer(s){
   busy = true; const t0 = performance.now();
   try{
     if(detState==='ok'){
-      const dets = await detect(s, confFor());
-      const nb = updateTracks(dets);
+      const th = confFor(), all = await detect(s, $('#doubtCap').checked ? th*.5 : th);
+      const dets = all.filter(d => d.score >= th); weak = all.filter(d => d.score < th);
+      const nb = updateTracks(dets, lastCov);
       for(const b of nb) b.t = telemetry(s, b);
       boxes = nb; target = pickTarget(s, boxes);
       await classify(s);
       for(const b of boxes){ if(b.sub){ b.track.sub = b.sub; b.track.subConf = b.subConf; } }
-    }else{ boxes = []; target = null; }
+      angles(s);
+      if(boxes.length) lastSeen = t0;
+    }else{ boxes = []; target = null; weak = []; }
     centerRes = null;
     await centerJudge(s);
-    if(detState==='ok' || boxes.length){ trackTarget(s); maybeSend(t0); maybeAutoCap(s, t0); }
+    if(detState==='ok' || boxes.length){ trackTarget(s); maybeSend(t0); maybeAutoCap(s, t0); maybeLockCap(s, t0); maybeDoubtCap(s, t0); }
+    newLocks = [];
     if(collecting && t0 - lastAdd > 95){ lastAdd = t0; await addSample(s); }
   }catch(e){ console.error(e); }
+  lastInferMs = lastInferMs*.8 + (performance.now()-t0)*.2; lastInferAt = t0;
   $('#ms').textContent = Math.round(performance.now()-t0);
   frames++; const now = performance.now(); if(now - fpsT > 1000){ $('#fps').textContent = Math.round(frames*1000/(now-fpsT)); frames = 0; fpsT = now; }
   busy = false;
 }
+let lastInferAt = 0, lastSeen = performance.now(), weak = [], detOff = false;
+// 폰에서 한동안 아무것도 안 보이면 감지를 1초에 3번으로 줄여 발열과 배터리를 아낀다.
+const idle = now => isPhone() && mode==='watch' && !collecting && now - lastSeen > 8000;
 function loop(){
   requestAnimationFrame(loop);
   const s = src(); if(!s.w) return;
-  if(!busy && !(paused && srcKind!=='photo')) infer(s);
+  const now0 = performance.now(), sleepy = idle(now0);
+  if(!busy && !detOff && !(paused && srcKind!=='photo') && (!sleepy || now0 - lastInferAt > 330)) infer(s);
+  if(sleepy !== hudSleepy){ hudSleepy = sleepy; $('#hSave').hidden = !sleepy; }
   draw(s);
-  const now = performance.now(); if(now - lastPaint > 120){ lastPaint = now; paintReadout(s); }
+  const now = performance.now(); if(now - lastPaint > 120){ lastPaint = now; paintReadout(s); if(isPhone()) paintHud(); }
 }
 
 /* ---------- wiring ---------- */
 for(const id of SET_IDS){ $('#'+id)?.addEventListener('input', ()=>{ paintOutputs(); saveSettings(); if(id==='fmt'||id==='fieldMm') paintSample(); }); }
-function paintSample(){ $('#fmtSample').textContent = '예: ' + ($('#fmt').value==='json' ? '{"t":1764050000000,"n":2,"tgt":{"cls":"butt","conf":0.87,"x":32,"y":-15,"in":false,"px":[812,540],"stable":9}}' : 'T,32,-15,0.87,0,2'); }
+function paintSample(){ $('#fmtSample').textContent = '예: ' + ($('#fmt').value==='json' ? '{"t":1764050000000,"n":2,"tgt":{"cls":"butt","conf":0.87,"x":32,"y":-15,"ang":-35,"in":false,"px":[812,540],"stable":9}}' : 'T,32,-15,0.87,0,2,-35 (마지막 값은 누운 방향, 가로 0°, 시계 방향 +)'); }
 const toggle = (sel, fn) => $(sel).addEventListener('click', ()=>{ const b = $(sel); b.setAttribute('aria-pressed', String(!on(sel))); fn && fn(on(sel)); saveSettings(); });
 toggle('#zoneBtn'); toggle('#gridBtn'); toggle('#mirrorBtn', v => { view.classList.toggle('mirror', v); mirrorPref[facing] = v; });
 function togglePause(){ paused = !paused; $('#pauseBtn').setAttribute('aria-pressed', String(paused)); $('#pauseBtn span').textContent = paused ? '재개' : '일시정지'; if(srcKind!=='photo') paused ? video.pause() : video.play().catch(()=>{}); }
 $('#pauseBtn').addEventListener('click', togglePause);
 $('#camSel').addEventListener('change', e=>startCam(e.target.value));
+$('#camSel2').addEventListener('change', e=>startCam(e.target.value));
 $('#resSel').addEventListener('change', ()=>{ if(srcKind==='cam') startCam($('#camSel').value||undefined); });
 $('#retry').addEventListener('click', ()=>startCam($('#camSel').value||undefined));
 $('#fileBtn').addEventListener('click', ()=> srcKind==='cam' ? $('#fileIn').click() : startCam($('#camSel').value||undefined));
@@ -1076,8 +1398,12 @@ edc().addEventListener('pointerup', ()=>{ if(!ed || !ed.drag) return; const b = 
 $('#edDel').addEventListener('click', ()=>{ if(ed && ed.sel>=0){ ed.boxes.splice(ed.sel,1); ed.sel = -1; edDraw(); } });
 $('#edClear').addEventListener('click', ()=>{ if(ed){ ed.boxes = []; ed.sel = -1; edDraw(); } });
 $('#edClose').addEventListener('click', closeEditor);
-$('#edSave').addEventListener('click', async ()=>{ if(!ed) return; const d = ed.d; d.labels = ed.boxes.map(b=>[b.x+b.w/2, b.y+b.h/2, b.w, b.h]); d.edited = true; d.uploaded = false; try{ await idb.put(d); }catch(_){} paintDs(); closeEditor(); toast('박스를 저장했습니다'); });
-$('#edRemove').addEventListener('click', async ()=>{ if(!ed) return; const n = ed.d.name; ds = ds.filter(x=>x.name!==n); try{ await idb.del(n); }catch(_){} paintDs(); closeEditor(); toast('사진을 지웠습니다'); });
+async function edCommit(){ const d = ed.d; d.labels = ed.boxes.map(b=>[b.x+b.w/2, b.y+b.h/2, b.w, b.h]); d.edited = true; d.review = false; d.uploaded = false; try{ await idb.put(d); }catch(_){} paintDs(); }
+$('#edSave').addEventListener('click', async ()=>{ if(!ed) return; await edCommit(); closeEditor(); toast('박스를 저장했습니다'); });
+$('#edNext').addEventListener('click', async ()=>{ if(!ed) return; await edCommit(); nextReview(); });
+$('#edFaceOk').addEventListener('click', async ()=>{ if(!ed) return; ed.d.faceOk = true; try{ await idb.put(ed.d); }catch(_){} $('#edWarn').hidden = true; $('#edFaceOk').hidden = true; paintDs(); });
+$('#edRemove').addEventListener('click', async ()=>{ if(!ed) return; const n = ed.d.name, q = ed.queue; ds = ds.filter(x=>x.name!==n); try{ await idb.del(n); }catch(_){} paintDs(); toast('사진을 지웠습니다'); if(q) nextReview(); else closeEditor(); });
+$('#reviewBtn').addEventListener('click', nextReview);
 window.addEventListener('resize', ()=>{ if(ed) edDraw(); });
 $('#capBtn2').addEventListener('click', ()=>capture(src()));
 $('#dsZip').addEventListener('click', exportZip);
@@ -1125,7 +1451,7 @@ $('#qrClose').addEventListener('click', ()=>$('#qr').classList.remove('on'));
 $('#qr').addEventListener('click', e=>{ if(e.target.id==='qr') $('#qr').classList.remove('on'); });
 help.addEventListener('click', e=>{ if(e.target===help) help.classList.remove('on'); });
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ help.classList.remove('on'); $('#qr').classList.remove('on'); closeEditor(); return; }
+  if(e.key==='Escape'){ help.classList.remove('on'); $('#qr').classList.remove('on'); closeEditor(); closeSheet(); return; }
   if(ed || !e.target.matches || e.target.matches('input,select,textarea') || e.repeat || e.metaKey || e.ctrlKey) return;
   const k = e.key.toLowerCase();
   if(k===' ' && !e.target.closest('button')){ e.preventDefault(); togglePause(); }
@@ -1136,6 +1462,38 @@ document.addEventListener('keydown', e=>{
 });
 document.addEventListener('keyup', e=>{ if(/^[1-9]$/.test(e.key)) stopHold(); });
 window.addEventListener('blur', stopHold);
+
+
+/* ---------- 폰 화면: 전체 카메라 + 아래 버튼 + 설정 시트 ---------- */
+const phoneMQ = matchMedia('(max-width:760px)');
+function applyPhone(){
+  const p = phoneMQ.matches; document.body.classList.toggle('phone', p); view.classList.toggle('cover', p);
+  if(!p) closeSheet(); paintCam();
+}
+phoneMQ.addEventListener ? phoneMQ.addEventListener('change', applyPhone) : phoneMQ.addListener(applyPhone);
+function openSheet(){ $('#side').classList.add('open'); $('#scrim').classList.add('on'); }
+function closeSheet(){ $('#side').classList.remove('open'); $('#scrim').classList.remove('on'); }
+$('#sheetBtn').addEventListener('click', openSheet); $('#sheetClose').addEventListener('click', closeSheet); $('#scrim').addEventListener('click', closeSheet);
+$('#pCap').addEventListener('click', ()=>capture(src()));
+$('#pUp').addEventListener('click', ()=>{ if(!$('#upCode').value.trim()){ openSheet(); $('#t-data').click(); toast('업로드 비밀번호를 먼저 넣으세요'); return; } uploadPending(false); });
+$('#pDet').addEventListener('click', ()=>{ detOff = !detOff; const b = $('#pDet'); b.setAttribute('aria-pressed', String(!detOff)); b.textContent = detOff ? '감지 끔' : '감지 켬'; if(detOff){ boxes = []; target = null; tracks = []; } });
+function paintHud(){ const c = $('#hCount'), n = boxes.length; c.querySelector('b').textContent = n; c.className = 'chip' + (n ? ' go' : detState==='ok' ? ' ok' : ''); c.lastChild.textContent = detState==='ok' ? '개' : detState==='pending' ? ' 모델 학습 중' : ' 준비 중'; }
+// 전체화면 (안드로이드). 아이폰은 홈 화면에 추가하면 주소창 없이 열린다.
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+if(document.fullscreenEnabled && !standalone) $('#fsBtn').hidden = false;
+$('#fsBtn').addEventListener('click', ()=>{ document.fullscreenElement ? document.exitFullscreen().catch(()=>{}) : document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{}); });
+// 사진 용도(학습/시험)와 장면 태그
+function paintSplit(){ for(const b of document.querySelectorAll('#splitSeg button')) b.setAttribute('aria-pressed', String(b.dataset.v===splitVal)); $('#pCap').classList.toggle('test', splitVal==='test'); for(const b of document.querySelectorAll('#tags button')) b.setAttribute('aria-pressed', String(tagSet.has(b.dataset.t))); }
+for(const b of document.querySelectorAll('#splitSeg button')) b.addEventListener('click', ()=>{ splitVal = b.dataset.v; paintSplit(); toast(splitVal==='test' ? '시험용으로 찍습니다. 학습에는 안 들어갑니다' : '학습용으로 찍습니다'); try{ localStorage.setItem(KEY+'-split', splitVal); }catch(_){} });
+$('#tags').addEventListener('click', e=>{ const b = e.target.closest('[data-t]'); if(!b) return; tagSet.has(b.dataset.t) ? tagSet.delete(b.dataset.t) : tagSet.add(b.dataset.t); paintSplit(); try{ localStorage.setItem(KEY+'-tags', [...tagSet].join(',')); }catch(_){} });
+try{ splitVal = localStorage.getItem(KEY+'-split')==='test' ? 'test' : 'train'; (localStorage.getItem(KEY+'-tags')||'').split(',').filter(Boolean).forEach(t=>tagSet.add(t)); }catch(_){}
+for(const id of ['lockCap','doubtCap']) $('#'+id).addEventListener('change', saveSettings);
+// 홈 화면 설치 (PWA)
+let installEv = null;
+addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installEv = e; $('#installBtn').hidden = false; $('#installHint').textContent = '홈 화면에 설치하면 주소창 없이 앱처럼 열립니다.'; });
+$('#installBtn').addEventListener('click', async ()=>{ if(!installEv) return; installEv.prompt(); await installEv.userChoice.catch(()=>{}); installEv = null; $('#installBtn').hidden = true; });
+if(standalone) $('#installHint').textContent = '앱으로 설치되어 실행 중입니다.';
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ---------- boot ---------- */
 function setMode(m){
@@ -1150,6 +1508,7 @@ try{ setMode(localStorage.getItem(KEY+'-mode')==='arm' ? 'arm' : 'watch'); }catc
 idb.all().then(list=>{ ds = (list||[]).sort((a,b)=>a.name<b.name?-1:1); paintDs(); if(ds.length) $('#dsNote').textContent = `이 기기에 저장된 사진 ${ds.length}장을 불러왔습니다.`; }).catch(()=>{});
 let wake = null; async function keepAwake(){ try{ if('wakeLock' in navigator && document.visibilityState==='visible' && !wake){ wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake = null); } }catch(_){} }
 document.addEventListener('visibilitychange', keepAwake); document.addEventListener('pointerdown', keepAwake, {once:true});
+applyPhone(); try{ if(localStorage.getItem(KEY+'-night')) setNight(true); }catch(_){} paintSplit();
 loadSettings(); paintOutputs(); paintSample(); paintSens(); paintRegion(); renderSubs(); paintDs(); linkState();
 log('로봇 탭에서 연결하고 자동 송신을 켜면 목표 좌표가 여기 찍힙니다.', 'sys');
 startCam(); loadDetector();
