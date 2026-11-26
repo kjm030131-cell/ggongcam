@@ -103,9 +103,9 @@ final class AppModel: ObservableObject {
         }.store(in: &bag)
         models.$recConf.sink { [weak self] _ in self?.pushSettings() }.store(in: &bag)
         // 하위 객체가 바뀌면 화면도 다시 그린다
-        models.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }.store(in: &bag)
-        shots.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }.store(in: &bag)
-        camera.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }.store(in: &bag)
+        models.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &bag)
+        shots.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &bag)
+        camera.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &bag)
         pushSettings()
     }
 
