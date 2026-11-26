@@ -17,8 +17,9 @@ jobs:
         with: { python-version: "3.11" }
       - name: install
         run: |
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install ultralytics "coremltools>=8"
+          # 최신 torch 는 coremltools 변환이 깨져서 변환용으로 검증된 버전을 고정한다
+          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install ultralytics "coremltools>=8.1,<9" "numpy<2.3"
       - name: export
         run: |
           CONF=$(python -c "import json;d=json.load(open('public/models/butt.json'));print(d.get('test',{}).get('conf',0.4))")

@@ -37,7 +37,7 @@ jobs:
         if: steps.check.outputs.run == '1'
         run: |
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install ultralytics onnx onnxslim onnxruntime pillow "coremltools>=8"
+          pip install ultralytics onnx onnxslim onnxruntime pillow
       - name: dataset (CigWasteNet, MIT)
         if: steps.check.outputs.run == '1'
         run: |
@@ -73,7 +73,10 @@ jobs:
           if [ -f /tmp/no_publish ]; then echo "반영 안 함: 건너뜀"; exit 0; fi
           CONF=$(python -c "import json;print(json.load(open('public/models/butt.json'))['test'].get('conf',0.4))")
           IMGSZ=$(python -c "import json;print(json.load(open('public/models/butt.json'))['imgsz'])")
-          python training/export_ios.py training/weights/butt.pt public/models "$CONF" "$IMGSZ"
+          python -m venv /tmp/cml
+          /tmp/cml/bin/pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          /tmp/cml/bin/pip install -q ultralytics "coremltools>=8.1,<9" "numpy<2.3"
+          /tmp/cml/bin/python training/export_ios.py training/weights/butt.pt public/models "$CONF" "$IMGSZ"
       - name: commit model
         if: steps.check.outputs.run == '1'
         run: |
