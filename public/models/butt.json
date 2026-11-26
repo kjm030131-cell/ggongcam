@@ -1,16 +1,16 @@
 {
   "file": "butt.onnx",
-  "imgsz": 512,
+  "imgsz": 640,
   "variants": [
     {
-      "file": "butt-512.onnx",
-      "imgsz": 512,
-      "conf": 0.439
+      "file": "butt-640.onnx",
+      "imgsz": 640,
+      "conf": 0.327
     },
     {
-      "file": "butt-384.onnx",
-      "imgsz": 384,
-      "conf": 0.439
+      "file": "butt-416.onnx",
+      "imgsz": 416,
+      "conf": 0.327
     },
     {
       "file": "butt-close-416.onnx",
@@ -24,14 +24,15 @@
     "꽁초"
   ],
   "test": {
-    "precision": 0.9418,
-    "recall": 0.8383,
-    "map50": 0.9061,
-    "map50_95": 0.6804,
-    "f1": 0.8874,
-    "conf": 0.439
+    "precision": 0.8982,
+    "recall": 0.8279,
+    "map50": 0.8787,
+    "map50_95": 0.6431,
+    "f1": 0.8631,
+    "conf": 0.327
   },
+  "field_test": null,
   "dataset": "CigWasteNet + TACO + 한국 스틱 합성 + 직접 모은 사진",
   "base": "yolo11n",
-  "trained_at": "2026-11-25T18:51Z"
+  "trained_at": "2026-11-26T04:56Z"
 }
