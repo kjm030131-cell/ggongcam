@@ -64,6 +64,7 @@ final class ModelStore: ObservableObject {
         if busy { return }
         busy = true
         defer { busy = false }
+        var stage = "목록 받기"
         do {
             var req = URLRequest(url: Site.base.appendingPathComponent("models/ios.json"))
             req.cachePolicy = .reloadIgnoringLocalCacheData
@@ -74,17 +75,20 @@ final class ModelStore: ObservableObject {
                 return
             }
             status = "새 모델 받는 중"
+            stage = "파일 받기"
             let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("dl-\(info.version).mlpackage", isDirectory: true)
             try? FileManager.default.removeItem(at: tmp)
             for f in info.files {
                 guard let src = URL(string: info.base + f, relativeTo: Site.base) else { continue }
                 let (d, r) = try await URLSession.shared.data(from: src)
-                guard (r as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+                let code = (r as? HTTPURLResponse)?.statusCode ?? 0
+                guard code == 200 else { throw NSError(domain: "model", code: code, userInfo: [NSLocalizedDescriptionKey: "\(f) 응답 \(code)"]) }
                 let dst = tmp.appendingPathComponent(f)
                 try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try d.write(to: dst)
             }
             status = "모델 준비 중"
+            stage = "모델 변환"
             let compiled = try await MLModel.compileModel(at: tmp)
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let final = dir.appendingPathComponent(info.version + ".mlmodelc", isDirectory: true)
@@ -102,7 +106,9 @@ final class ModelStore: ObservableObject {
             open(final)
             if model != nil { status = "새 모델로 바꿨습니다" }
         } catch {
-            status = model == nil ? "모델을 받지 못했습니다. 인터넷을 확인하세요" : "준비됨 (업데이트 확인 실패)"
+            let why = String(describing: error).prefix(160)
+            print("모델 업데이트 실패 [\(stage)]:", error)
+            status = model == nil ? "모델 실패 (\(stage)): \(why)" : "준비됨 (업데이트 확인 실패: \(stage))"
         }
     }
 }

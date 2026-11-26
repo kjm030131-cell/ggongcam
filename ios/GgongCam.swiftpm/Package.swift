@@ -27,7 +27,8 @@ let package = Package(
                 .portrait
             ],
             capabilities: [
-                .camera(purposeString: "바닥의 담배꽁초를 찾고 학습용 사진을 찍으려면 카메라가 필요합니다.")
+                .camera(purposeString: "바닥의 담배꽁초를 찾고 학습용 사진을 찍으려면 카메라가 필요합니다."),
+                .outgoingNetworkConnections()
             ],
             appCategory: .utilities
         )
