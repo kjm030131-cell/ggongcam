@@ -47,6 +47,7 @@ def prep(cut, long_px):
     c = cv2.warpAffine(c, M, (nw, nh), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0, 0))
     ys, xs = np.where(c[:, :, 3] > 40)
     if not len(xs): return None
+    if max(xs.max() - xs.min(), ys.max() - ys.min()) < 6: return None
     c = c[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     rgb = c[:, :, :3].astype(np.float32)
     rgb = rgb * rng.uniform(0.8, 1.08) + rng.uniform(-12, 8)           # 밝기
@@ -64,8 +65,10 @@ for i in range(N):
     lbl = dst / "train" / "labels" / (bp.stem + ".txt")
     boxes = read_boxes(lbl, W, H)
     new = []
-    for _ in range(rng.choice([1, 1, 2, 2, 3, 4])):
-        c = prep(rng.choice(cuts), rng.uniform(0.05, 0.22) * max(W, H))
+    for _ in range(rng.choice([1, 2, 2, 3, 4, 5])):
+        # 절반은 멀리서 찍힌 것처럼 작게(긴 변의 2~6%), 나머지는 가까이(6~22%)
+        frac = rng.uniform(0.02, 0.06) if rng.random() < 0.5 else rng.uniform(0.06, 0.22)
+        c = prep(rng.choice(cuts), frac * max(W, H))
         if c is None: continue
         h, w = c.shape[:2]
         if w >= W - 4 or h >= H - 4: continue
