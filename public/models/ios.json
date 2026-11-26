@@ -1,8 +1,8 @@
 {
-  "version": "202611260216",
-  "imgsz": 512,
-  "conf": 0.439,
-  "base": "models/ios/202611260216/butt.mlpackage/",
+  "version": "202611260527",
+  "imgsz": 640,
+  "conf": 0.327,
+  "base": "models/ios/202611260527/butt.mlpackage/",
   "files": [
     "Data/com.apple.CoreML/model.mlmodel",
     "Data/com.apple.CoreML/weights/weight.bin",
@@ -12,5 +12,5 @@
     "꽁초"
   ],
   "from": "butt.pt",
-  "made_at": "2026-11-26T02:17Z"
+  "made_at": "2026-11-26T05:27Z"
 }
