@@ -37,7 +37,7 @@ jobs:
         if: steps.check.outputs.run == '1'
         run: |
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install ultralytics onnx onnxslim onnxruntime pillow
+          pip install ultralytics onnx onnxslim onnxruntime pillow "coremltools>=8"
       - name: dataset (CigWasteNet, MIT)
         if: steps.check.outputs.run == '1'
         run: |
@@ -66,6 +66,14 @@ jobs:
         env:
           HAS_RF: ${{ secrets.ROBOFLOW_API_KEY != '' && '1' || '' }}
         run: python training/train.py /tmp/butt/data.yaml public/models "${{ github.event.inputs.hours || '0.75' }}"
+      - name: export iOS (CoreML)
+        if: steps.check.outputs.run == '1'
+        continue-on-error: true
+        run: |
+          if [ -f /tmp/no_publish ]; then echo "반영 안 함: 건너뜀"; exit 0; fi
+          CONF=$(python -c "import json;print(json.load(open('public/models/butt.json'))['test'].get('conf',0.4))")
+          IMGSZ=$(python -c "import json;print(json.load(open('public/models/butt.json'))['imgsz'])")
+          python training/export_ios.py training/weights/butt.pt public/models "$CONF" "$IMGSZ"
       - name: commit model
         if: steps.check.outputs.run == '1'
         run: |

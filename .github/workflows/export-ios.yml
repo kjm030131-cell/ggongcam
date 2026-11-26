@@ -1,0 +1,33 @@
+# 지금 쓰는 학습 가중치(training/weights/butt.pt)를 아이폰 앱용 CoreML 모델로 바꿔 public/models/ios/ 에 올린다.
+# 학습 없이 변환만 한다. 학습이 끝날 때도 train 워크플로가 같은 일을 한다.
+name: export-ios
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: export-ios
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: install
+        run: |
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install ultralytics "coremltools>=8"
+      - name: export
+        run: |
+          CONF=$(python -c "import json;d=json.load(open('public/models/butt.json'));print(d.get('test',{}).get('conf',0.4))")
+          IMGSZ=$(python -c "import json;print(json.load(open('public/models/butt.json')).get('imgsz',640))")
+          python training/export_ios.py training/weights/butt.pt public/models "$CONF" "$IMGSZ"
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/ios public/models/ios.json
+          git commit -m "아이폰 앱용 모델 변환" || exit 0
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done
