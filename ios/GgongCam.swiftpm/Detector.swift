@@ -50,7 +50,10 @@ final class ModelStore: ObservableObject {
             let cfg = MLModelConfiguration()
             cfg.computeUnits = .all
             let m = try MLModel(contentsOf: url, configuration: cfg)
-            model = try VNCoreMLModel(for: m)
+            let vn = try VNCoreMLModel(for: m)
+            // 모델 안의 NMS 가 받는 기준값. 낮게 넘기고 앱에서 감도에 맞춰 다시 거른다.
+            vn.featureProvider = Thresholds(iou: 0.45, conf: 0.12)
+            model = vn
             status = "준비됨"
         } catch {
             status = "모델을 열지 못했습니다"
@@ -100,6 +103,20 @@ final class ModelStore: ObservableObject {
             if model != nil { status = "새 모델로 바꿨습니다" }
         } catch {
             status = model == nil ? "모델을 받지 못했습니다. 인터넷을 확인하세요" : "준비됨 (업데이트 확인 실패)"
+        }
+    }
+}
+
+/// CoreML 모델의 NMS 입력(iouThreshold, confidenceThreshold)을 채워 준다.
+final class Thresholds: NSObject, MLFeatureProvider {
+    let iou: Double, conf: Double
+    init(iou: Double, conf: Double) { self.iou = iou; self.conf = conf }
+    var featureNames: Set<String> { ["iouThreshold", "confidenceThreshold"] }
+    func featureValue(for featureName: String) -> MLFeatureValue? {
+        switch featureName {
+        case "iouThreshold": return MLFeatureValue(double: iou)
+        case "confidenceThreshold": return MLFeatureValue(double: conf)
+        default: return nil
         }
     }
 }
